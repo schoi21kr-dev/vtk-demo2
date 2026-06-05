@@ -1,0 +1,16 @@
+{
+  "name": "vtk-multidevice-demo2",
+  "version": "1.0.0",
+  "description": "VTK Multi-Device Demo 2 (PC=Keypad B numbers + QR, Phone=Keypad A blind input) for PG502 Standardization Review",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

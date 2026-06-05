@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VTK Mobile · 키패드 A (무표시)</title>
+<style>
+  :root {
+    --navy: #1E2761; --navy-dark: #0F1838;
+    --amber: #D4A574; --amber-bright: #E8B97D; --amber-txt: #92400E;
+    --text-muted: #64748B; --green: #166534; --green-bg: #DCFCE7; --red: #991B1B; --red-bg: #FEE2E2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; background: var(--navy-dark); color: white; min-height: 100vh; padding: 16px; display: flex; align-items: center; justify-content: center; }
+  .phone-frame { max-width: 400px; width: 100%; background: var(--navy); border-radius: 24px; padding: 24px 20px 28px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); position: relative; }
+  .phone-frame::before { content: ''; position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 80px; height: 6px; background: var(--navy-dark); border-radius: 4px; }
+  .header { text-align: center; margin: 20px 0 18px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .header h1 { font-size: 18px; color: var(--amber-bright); margin-bottom: 4px; letter-spacing: 1px; }
+  .header p { font-size: 12px; color: var(--text-muted); }
+  .badge { display: inline-block; margin-top: 8px; background: rgba(212,165,116,0.2); color: var(--amber-bright); padding: 4px 12px; border-radius: 12px; font-size: 11px; letter-spacing: 1px; }
+  .badge.live { background: rgba(134,239,172,0.2); color: #86EFAC; }
+  .instruction { background: rgba(212,165,116,0.15); border-left: 3px solid var(--amber); padding: 12px 16px; border-radius: 6px; margin-bottom: 18px; font-size: 13px; color: var(--amber-bright); line-height: 1.6; }
+  .loading { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+  .spinner { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--amber); border-radius: 50%; width: 36px; height: 36px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+  .progress { display: flex; gap: 10px; justify-content: center; margin: 4px 0 16px; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); }
+  .dot.filled { background: var(--amber); border-color: var(--amber-bright); }
+  /* 키패드 A (무표시 좌표입력) */
+  .pad-a { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 8px 0 4px; }
+  .a-cell { aspect-ratio: 1; background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: transform .08s, background .12s; }
+  .a-cell .pt { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.35); }
+  .a-cell:active { transform: scale(.94); }
+  .a-cell.clicked { background: var(--amber); border-color: var(--amber-bright); }
+  .a-cell.clicked .pt { background: var(--navy-dark); }
+  .a-cell.empty { background: rgba(255,255,255,0.02); border: 2px dashed rgba(255,255,255,0.08); cursor: default; }
+  .controls { display: flex; gap: 10px; margin-top: 16px; }
+  .btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer; font-family: inherit; }
+  .btn-secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.15); flex: 0.7; }
+  .btn-primary { background: var(--amber); color: var(--navy-dark); }
+  .btn-primary:disabled { opacity: 0.45; cursor: default; }
+  .result-banner { margin-top: 16px; padding: 14px 18px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 14px; }
+  .result-banner.success { background: var(--green-bg); color: var(--green); }
+  .result-banner.failure { background: var(--red-bg); color: var(--red); }
+  .channel-info { background: rgba(0,0,0,0.2); padding: 12px 16px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 11px; color: var(--text-muted); margin-top: 16px; line-height: 1.6; word-break: break-all; }
+  .channel-info .label { color: var(--amber-bright); font-weight: bold; }
+  .error-screen { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+  .error-screen h2 { color: white; margin-bottom: 16px; }
+  .error-screen p { font-size: 14px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="phone-frame">
+  <div class="header">
+    <h1>📱 VTK Authenticator</h1>
+    <p>Channel ② · Mobile · 키패드 A (무표시)</p>
+    <div class="badge" id="statusBadge">CONNECTING...</div>
+  </div>
+  <div id="content">
+    <div class="loading"><div class="spinner"></div><p>서버에 연결 중...</p></div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+function getSid() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('s') || params.get('sid');
+}
+const sid = getSid();
+const socket = io();
+let pwLen = 4;
+let userInput = [];
+let locked = false;
+
+async function init() {
+  if (!sid) { showError('세션 ID 없음', 'PC 화면의 QR 코드를 다시 스캔하거나, URL에 ?s=세션ID 파라미터가 포함되어 있는지 확인하세요.'); return; }
+  try {
+    const res = await fetch('/api/pair/' + sid);
+    if (!res.ok) { const err = await res.json(); showError('페어링 실패', err.error || '세션이 만료되었거나 존재하지 않습니다.'); return; }
+    const data = await res.json();
+    pwLen = data.n || 4;
+    socket.emit('join-mobile', { sid });
+    document.getElementById('statusBadge').className = 'badge live';
+    document.getElementById('statusBadge').textContent = '● LIVE · PC와 동기화됨';
+    renderPadA();
+  } catch (err) { showError('연결 오류', err.message); }
+}
+
+function showError(title, msg) {
+  document.getElementById('content').innerHTML = `<div class="error-screen"><h2>${title}</h2><p>${msg}</p></div>`;
+}
+
+function renderPadA() {
+  let html = `
+    <div class="instruction">
+      <strong>위원님께 안내</strong><br>
+      PC의 키패드 B(숫자표시)에서 본인 비밀번호 숫자의 위치를 확인한 뒤,
+      아래 무표시 패드에서 <strong>같은 위치</strong>를 순서대로 누르세요.
+    </div>
+    <div class="progress" id="progress"></div>
+    <div class="pad-a" id="padA"></div>
+    <div class="controls">
+      <button class="btn btn-secondary" id="clearBtn">↺ 다시</button>
+      <button class="btn btn-primary" id="submitBtn" disabled>인증 제출</button>
+    </div>
+    <div id="resultBanner"></div>
+    <div class="channel-info">
+      <span class="label">SESSION:</span> ${sid.substring(0, 16)}<br>
+      <span class="label">CHANNEL:</span> ② Mobile (무표시 좌표입력)<br>
+      <span class="label">NOTE:</span> 좌표만 서버로 전송 · 비밀번호 숫자는 전송되지 않음
+    </div>`;
+  document.getElementById('content').innerHTML = html;
+
+  // 진행 점
+  const prog = document.getElementById('progress');
+  for (let i = 0; i < pwLen; i++) { const d = document.createElement('div'); d.className = 'dot'; prog.appendChild(d); }
+
+  // 무표시 패드 (3x4, 9·11 빈 셀)
+  const padA = document.getElementById('padA');
+  for (let i = 0; i < 12; i++) {
+    const cell = document.createElement('div');
+    if (i === 9 || i === 11) { cell.className = 'a-cell empty'; }
+    else {
+      cell.className = 'a-cell';
+      cell.dataset.index = i;
+      cell.innerHTML = '<span class="pt"></span>';
+      cell.onclick = () => handleCellClick(i, cell);
+    }
+    padA.appendChild(cell);
+  }
+
+  document.getElementById('clearBtn').onclick = resetInput;
+  document.getElementById('submitBtn').onclick = submitAuth;
+}
+
+function handleCellClick(idx, el) {
+  if (locked || userInput.length >= pwLen) return;
+  userInput.push(idx);
+  el.classList.add('clicked');
+  setTimeout(() => el.classList.remove('clicked'), 160);
+  updateProgress();
+  if (userInput.length === pwLen) document.getElementById('submitBtn').disabled = false;
+}
+
+function updateProgress() {
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('filled', i < userInput.length));
+}
+
+function resetInput() {
+  userInput = []; locked = false;
+  updateProgress();
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('resultBanner').innerHTML = '';
+}
+
+async function submitAuth() {
+  if (userInput.length !== pwLen) return;
+  locked = true;
+  document.getElementById('submitBtn').disabled = true;
+  try {
+    const res = await fetch('/auth/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sid, cSequence: userInput }) });
+    const data = await res.json();
+    showResult(data.ok);
+  } catch (err) { showError('전송 오류', err.message); }
+}
+
+function showResult(success) {
+  const banner = document.getElementById('resultBanner');
+  if (!banner) return;
+  banner.innerHTML = success
+    ? '<div class="result-banner success">✓ 인증 성공</div>'
+    : '<div class="result-banner failure">✗ 인증 실패 — 다시 입력하세요</div>';
+  setTimeout(resetInput, 1600);
+}
+
+// PC/서버에서 결과 통보가 와도 동일 처리 (중복 안전)
+socket.on('auth-result', ({ success }) => { if (locked) showResult(success); });
+
+init();
+</script>
+</body>
+</html>
