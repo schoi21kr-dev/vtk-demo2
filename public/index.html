@@ -3,272 +3,228 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VTK Multi-Device Demo 2 · PC</title>
+<title>VTK 멀티디바이스 시연 · PC · 데모 2</title>
 <style>
   :root {
     --navy: #1E2761; --navy-dark: #0F1838;
     --amber: #D4A574; --amber-bright: #E8B97D; --amber-light: #FAEEDA; --amber-txt: #92400E;
-    --pc-cyan: #5DADE2; --pc-cyan-dark: #1B5575; --pc-cyan-light: #E1F0FA;
+    --blue: #5DADE2; --blue-dark: #1B5575; --blue-light: #E1F0FA;
     --ice: #F0F4FA; --text-dark: #1F2937; --text-mid: #475569; --text-muted: #64748B;
     --border: #E2E8F0; --green: #166534; --green-bg: #DCFCE7; --red: #991B1B; --red-bg: #FEE2E2;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; background: linear-gradient(135deg, var(--ice) 0%, #fff 100%); color: var(--text-dark); min-height: 100vh; padding: 20px; }
-  .container { max-width: 1280px; margin: 0 auto; }
-  .header { background: var(--navy); color: white; padding: 24px 32px; border-radius: 12px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
-  .header h1 { font-size: 22px; letter-spacing: 1px; }
-  .header .badge { background: var(--amber); color: var(--navy-dark); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; letter-spacing: 2px; }
-  .panel { background: white; border-radius: 12px; padding: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid var(--border); margin-bottom: 16px; }
-  .panel h2 { font-size: 18px; color: var(--navy); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--ice); }
-  .panel .sub { font-size: 13px; color: var(--text-muted); margin: -8px 0 14px; }
-  .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
-  .reg-area { background: var(--amber-light); border: 2px dashed var(--amber); padding: 20px; border-radius: 8px; margin-bottom: 16px; }
-  .reg-area label { display: block; color: var(--amber-txt); font-weight: bold; margin-bottom: 6px; font-size: 14px; }
-  .reg-area input { width: 100%; padding: 10px 14px; border: 2px solid var(--amber); border-radius: 6px; font-size: 18px; font-family: 'Consolas', monospace; text-align: center; letter-spacing: 4px; margin-bottom: 10px; }
+  .container { max-width: 1180px; margin: 0 auto; }
+  .header { background: var(--navy); color: white; padding: 20px 28px; border-radius: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 20px; letter-spacing: .5px; }
+  .header .badge { background: var(--amber); color: var(--navy-dark); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; letter-spacing: 2px; }
+  .meta { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 10px 18px; margin-bottom: 12px; font-family: 'Consolas', monospace; font-size: 13px; color: var(--text-mid); }
+  .meta b { color: var(--navy); }
+  .status { background: var(--blue-light); border: 1px solid #BEE0F5; border-radius: 8px; padding: 12px 18px; margin-bottom: 16px; font-size: 14px; color: var(--blue-dark); font-weight: bold; }
+  .status.paired { background: var(--green-bg); border-color: #A7E5BD; color: var(--green); }
+  .panel { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid var(--border); }
+  .panel h2 { font-size: 17px; color: var(--navy); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--ice); text-align: center; }
+  .reg-area { background: var(--amber-light); border: 2px dashed var(--amber); padding: 18px; border-radius: 8px; margin-bottom: 16px; display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+  .reg-field { flex: 1; min-width: 160px; }
+  .reg-area label { display: block; color: var(--amber-txt); font-weight: bold; margin-bottom: 6px; font-size: 13px; }
+  .reg-area input { width: 100%; padding: 10px 14px; border: 2px solid var(--amber); border-radius: 6px; font-size: 16px; font-family: 'Consolas', monospace; text-align: center; letter-spacing: 4px; }
+  .btn { border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; font-family: inherit; padding: 12px 20px; }
+  .btn-amber { background: var(--amber); color: var(--navy-dark); }
+  .btn-navy { background: var(--navy); color: #fff; }
+  .btn-block { width: 100%; margin-top: 16px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
   .qr-section { text-align: center; }
-  .qr-box { background: white; padding: 24px; border: 2px solid var(--border); border-radius: 12px; display: inline-block; margin: 12px 0; min-height: 280px; min-width: 280px; }
-  .qr-instruction { background: var(--amber-light); border-left: 4px solid var(--amber); padding: 14px 18px; border-radius: 6px; margin-top: 16px; text-align: left; font-size: 14px; line-height: 1.7; color: var(--amber-txt); }
-  .mobile-url-display { background: var(--ice); padding: 10px 14px; border-radius: 6px; margin-top: 12px; font-family: 'Consolas', monospace; font-size: 12px; color: var(--navy-dark); word-break: break-all; text-align: left; }
-  /* 키패드 B (숫자표시) */
-  .pad-b { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 320px; margin: 16px auto; }
-  .b-cell { aspect-ratio: 1; background: var(--pc-cyan-light); border: 2px solid var(--pc-cyan); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 26px; color: var(--pc-cyan-dark); user-select: none; font-weight: bold; position: relative; }
-  .b-cell.empty { background: #f8f8f8; border: 2px dashed #d0d0d0; }
-  .b-cell.highlighted { background: var(--amber); color: var(--navy-dark); border-color: var(--amber-bright); box-shadow: 0 0 14px rgba(232,185,125,0.6); }
-  .b-cell.highlighted::after { content: attr(data-order); position: absolute; top: -8px; right: -8px; background: var(--navy-dark); color: var(--amber-bright); width: 22px; height: 22px; border-radius: 50%; font-size: 12px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--amber); }
-  /* 강조 토글 */
-  .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--ice); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; }
-  .toggle-label { font-size: 13px; color: var(--navy); font-weight: bold; }
-  .seg { display: flex; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 3px; }
-  .seg-btn { border: none; background: transparent; color: var(--text-muted); font-size: 13px; font-weight: bold; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
-  .seg-btn.active { background: var(--navy); color: #fff; }
-  .mode-note { font-size: 12px; color: var(--text-muted); margin: 0 0 12px; text-align: center; }
-  .password-display { background: var(--navy); padding: 12px 18px; border-radius: 8px; margin: 12px auto; text-align: center; max-width: 320px; }
-  .password-display .label { font-size: 11px; color: var(--amber-bright); letter-spacing: 2px; margin-bottom: 4px; }
-  .password-display .value { font-size: 26px; font-weight: bold; color: #fff; font-family: 'Consolas', monospace; letter-spacing: 8px; }
-  .position-guide { background: var(--amber-light); padding: 14px 18px; border-radius: 8px; margin: 12px auto; font-size: 13px; color: var(--amber-txt); line-height: 1.7; max-width: 320px; }
-  .position-guide strong { color: var(--amber-txt); }
-  .result { margin-top: 16px; padding: 16px 20px; border-radius: 8px; font-weight: bold; text-align: center; font-size: 15px; }
-  .result.success { background: var(--green-bg); color: var(--green); }
-  .result.failure { background: var(--red-bg); color: var(--red); }
-  .pairing-status { background: var(--ice); padding: 14px 18px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; color: var(--text-mid); }
-  .pairing-status.connected { background: var(--green-bg); color: var(--green); font-weight: bold; }
-  .controls { display: flex; gap: 12px; margin-top: 16px; }
-  .btn { flex: 1; padding: 14px 20px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: all 0.2s; font-family: inherit; }
-  .btn-primary { background: var(--navy); color: white; }
-  .btn-primary:hover { background: var(--navy-dark); }
-  .btn-secondary { background: var(--border); color: var(--text-dark); }
-  .log-panel { background: var(--navy-dark); color: var(--amber-bright); padding: 20px; border-radius: 12px; font-family: 'Consolas', monospace; font-size: 12px; max-height: 220px; overflow-y: auto; margin-bottom: 24px; }
-  .log-panel h3 { color: var(--amber); font-size: 13px; margin-bottom: 12px; letter-spacing: 2px; }
-  .log-line { margin: 4px 0; line-height: 1.5; }
-  .log-time { color: var(--text-muted); }
-  .session-info { background: var(--ice); padding: 12px 16px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 12px; color: var(--text-mid); margin-bottom: 16px; word-break: break-all; }
-  .session-info .label { display: inline-block; color: var(--navy); font-weight: bold; margin-right: 8px; }
-  .footer { text-align: center; color: var(--text-muted); font-size: 12px; padding: 16px; margin-top: 24px; }
-  @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+  .qr-box { background: #fff; padding: 18px; border: 2px solid var(--border); border-radius: 12px; display: inline-block; margin: 8px 0; min-height: 220px; min-width: 220px; }
+  .qr-wait { color: var(--text-muted); padding: 80px 20px; }
+  .guide { background: var(--amber-light); border-left: 4px solid var(--amber); padding: 12px 16px; border-radius: 6px; margin-top: 14px; text-align: left; font-size: 13px; color: var(--amber-txt); line-height: 1.8; }
+  .guide b { display: block; margin-bottom: 4px; }
+  .alt-url { display: none; background: var(--ice); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-top: 10px; font-family: 'Consolas', monospace; font-size: 11px; color: var(--text-muted); word-break: break-all; text-align: left; }
+  .pad-note { font-size: 13px; color: var(--text-mid); text-align: center; line-height: 1.6; margin-bottom: 16px; }
+  .pad-b { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 320px; margin: 0 auto; }
+  .b-cell { aspect-ratio: 1; background: var(--blue-light); border: 2px solid #BEE0F5; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; color: var(--blue-dark); }
+  .b-cell.empty { background: #F8FAFC; border: 2px dashed var(--border); }
+  .pad-wait { text-align: center; color: var(--text-muted); padding: 60px 20px; }
+  .result-banner { margin-top: 16px; padding: 14px 18px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 15px; }
+  .result-banner.success { background: var(--green-bg); color: var(--green); }
+  .result-banner.failure { background: var(--red-bg); color: var(--red); }
+  .log-panel { background: var(--navy-dark); border-radius: 12px; padding: 18px 20px; margin-top: 4px; }
+  .log-title { color: var(--amber-bright); font-size: 13px; font-weight: bold; letter-spacing: 1px; margin-bottom: 10px; font-family: 'Consolas', monospace; }
+  .log-box { font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.9; max-height: 200px; overflow-y: auto; }
+  .log-line { color: #94A3B8; }
+  .log-line .t { color: #64748B; }
+  .log-line.success { color: #86EFAC; }
+  .log-line.info { color: #93C5FD; }
+  .log-line.system { color: #C4B5FD; }
+  .log-line.warning { color: #FCD34D; }
 </style>
 </head>
 <body>
 <div class="container">
-
   <div class="header">
     <h1>VTK 멀티디바이스 시연 · PC (Live) · 데모 2</h1>
     <span class="badge">LEVEL 3 · HIGH ASSURANCE</span>
   </div>
+  <div class="meta"><b>SESSION:</b> <span id="sessionText">—</span>&nbsp;&nbsp;&nbsp;<b>USER:</b> <span id="userText">—</span></div>
+  <div class="status" id="statusBar">1단계 · 사용자 등록 후 인증 세션을 시작하세요.</div>
 
-  <!-- 등록 -->
-  <div class="panel" id="regPanel">
+  <div class="panel" id="regPanel" style="margin-bottom:16px;">
     <h2>1단계 · 사용자 등록 (시연 시작 전 1회)</h2>
     <div class="reg-area">
-      <label>사용자 ID</label>
-      <input type="text" id="userIdInput" value="demo-user" autocomplete="off">
-      <label style="margin-top:12px">시연용 4자리 비밀번호 (예: 7259)</label>
-      <input type="text" id="passwordInput" maxlength="4" pattern="[0-9]{4}" placeholder="0000" autocomplete="off">
-    </div>
-    <button class="btn btn-primary" onclick="registerUser()">등록 완료 → 인증 시작</button>
-  </div>
-
-  <!-- 인증 -->
-  <div id="authPanel" style="display:none;">
-    <div class="session-info">
-      <span class="label">SESSION:</span><span id="sessionId">-</span>
-      &nbsp;&nbsp;<span class="label">USER:</span><span id="currentUser">-</span>
-    </div>
-    <div class="pairing-status" id="pairingStatus">🔄 휴대폰 페어링 대기 중... QR 코드를 휴대폰으로 스캔하세요</div>
-
-    <div class="main-grid">
-      <div class="panel qr-section">
-        <h2>① 휴대폰으로 QR 코드 스캔</h2>
-        <div class="qr-box" id="qrBox"><div style="padding:60px 0;color:var(--text-muted)">QR 코드 로딩 중...</div></div>
-        <div class="qr-instruction">
-          <strong>📱 위원님께 안내</strong><br>
-          1. 휴대폰 카메라 앱을 여세요<br>
-          2. 위 QR 코드를 비추세요<br>
-          3. 표시되는 링크를 탭하세요<br>
-          4. 휴대폰에 무표시 좌표입력 키패드 A가 표시됩니다
-        </div>
-        <div class="mobile-url-display" id="mobileUrlDisplay" style="display:none;">
-          <strong>대체 URL (QR 스캔 안 될 경우):</strong><br><span id="mobileUrlText"></span>
-        </div>
+      <div class="reg-field">
+        <label>사용자 ID</label>
+        <input type="text" id="userIdInput" value="demo-user">
       </div>
-
-      <div class="panel">
-        <h2>② 키패드 B · 숫자표시 (PC)</h2>
-        <p class="sub">이 숫자판에서 비밀번호 4자리의 위치를 확인하세요. 실제 입력(탭)은 휴대폰의 키패드 A(무표시)에서 합니다.</p>
-        <div id="padArea"></div>
-        <div id="resultArea"></div>
+      <div class="reg-field">
+        <label>비밀번호 (4자리)</label>
+        <input type="text" id="passwordInput" maxlength="4" pattern="[0-9]{4}" placeholder="0000" autocomplete="off" inputmode="numeric">
       </div>
-    </div>
-
-    <div class="controls" style="margin-bottom: 24px;">
-      <button class="btn btn-secondary" onclick="startAuth()">🎲 새 챌린지 (새 π 생성)</button>
-    </div>
-
-    <div class="log-panel">
-      <h3>┃ MESSAGE FLOW LOG (실시간 서버 통신) ┃</h3>
-      <div id="logArea"></div>
+      <button class="btn btn-amber" id="registerBtn" onclick="registerUser()">등록</button>
+      <button class="btn btn-navy" id="startBtn" onclick="startAuth()" disabled>인증 세션 시작 &#9654;</button>
     </div>
   </div>
 
-  <div class="footer">
-    VTK Multi-Device Demo 2 · Live Server with Socket.IO<br>
-    PC = 숫자표시 패드 B / 휴대폰 = 무표시 좌표입력 패드 A · PG502 검토용 시연 · 2026
+  <div class="main-grid">
+    <div class="panel qr-section">
+      <h2>&#9312; 휴대폰으로 QR 코드 스캔</h2>
+      <div class="qr-box" id="qrBox"><div class="qr-wait">인증 세션 시작 시<br>QR 코드가 표시됩니다.</div></div>
+      <div class="guide">
+        <b>&#128203; 위원님께 안내</b>
+        1. 휴대폰 카메라 앱을 여세요<br>
+        2. 위 QR 코드를 비추세요<br>
+        3. 표시되는 링크를 탭하세요<br>
+        4. 휴대폰에 무표시 좌표입력 키패드 A가 표시됩니다
+      </div>
+      <div class="alt-url" id="altUrl"><b>대체 URL (QR 스캔 안 될 경우):</b><br><span id="altUrlText"></span></div>
+    </div>
+
+    <div class="panel">
+      <h2>&#9313; 키패드 B &middot; 숫자표시 (PC)</h2>
+      <div class="pad-note">이 숫자판에서 비밀번호 4자리의 <b>위치</b>를 확인하세요.<br>실제 입력(탭)은 휴대폰의 키패드 A(무표시)에서 합니다.</div>
+      <div id="padArea"><div class="pad-wait">인증 세션을 시작하면<br>숫자 키패드 B가 표시됩니다.</div></div>
+      <div id="resultBanner"></div>
+    </div>
+  </div>
+
+  <button class="btn btn-navy btn-block" id="newChallengeBtn" onclick="startAuth()" style="display:none;">&#127922; 새 챌린지 (새 &pi; 생성)</button>
+
+  <div class="log-panel">
+    <div class="log-title">&#9614; MESSAGE FLOW LOG (실시간 서버 통신)</div>
+    <div class="log-box" id="logBox"></div>
   </div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
-let currentUser = null;
 let currentSid = null;
-let authData = null;      // { pi, password, n }
-let showHints = true;     // 강조 표시(시연 보조). 기본 켜짐
-let mobilePaired = false;
+let registeredUser = null;
+const NUMERIC_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10]; // 9·11은 빈 셀
 
 function log(msg, type = 'info') {
-  const time = new Date().toLocaleTimeString('ko-KR');
-  const colors = { info: '#E8B97D', success: '#86EFAC', warning: '#FCA5A5', system: '#94A3B8' };
+  const box = document.getElementById('logBox');
+  const now = new Date().toLocaleTimeString('ko-KR');
   const line = document.createElement('div');
-  line.className = 'log-line';
-  line.innerHTML = `<span class="log-time">[${time}]</span> <span style="color:${colors[type]}">${msg}</span>`;
-  const area = document.getElementById('logArea');
-  area.appendChild(line); area.scrollTop = area.scrollHeight;
+  line.className = 'log-line ' + type;
+  line.innerHTML = '<span class="t">[' + now + ']</span> ' + msg;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
 }
 
 async function registerUser() {
   const userId = document.getElementById('userIdInput').value.trim();
   const password = document.getElementById('passwordInput').value.trim();
-  if (!userId || !/^\d{4}$/.test(password)) { alert('사용자 ID와 4자리 숫자 비밀번호를 입력하세요'); return; }
+  if (!userId || !/^\d{4}$/.test(password)) {
+    alert('사용자 ID와 4자리 숫자 비밀번호를 입력하세요.');
+    return;
+  }
   try {
-    const res = await fetch('/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, password }) });
+    const res = await fetch('/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, password })
+    });
     const data = await res.json();
-    if (!data.ok) { alert('등록 실패: ' + (data.error || 'unknown')); return; }
-    currentUser = userId;
-    document.getElementById('currentUser').textContent = userId;
-    document.getElementById('regPanel').style.display = 'none';
-    document.getElementById('authPanel').style.display = 'block';
-    log('등록 완료 — 서버에 커밋먼트만 저장 (평문 D 폐기)', 'success');
-    startAuth();
-  } catch (err) { alert('서버 연결 실패: ' + err.message); }
+    if (!res.ok) { alert(data.error || '등록 실패'); return; }
+    registeredUser = userId;
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('userText').textContent = userId;
+    log('등록 완료 — 서버에 등록 참조정보(해시)만 저장 (평문 D 폐기)', 'success');
+    document.getElementById('statusBar').textContent = '등록 완료 · "인증 세션 시작"을 누르세요.';
+  } catch (err) { alert('오류: ' + err.message); }
 }
 
 async function startAuth() {
+  if (!registeredUser) { alert('먼저 사용자 등록을 하세요.'); return; }
   try {
-    const res = await fetch('/auth/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser }) });
+    const res = await fetch('/auth/start', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: registeredUser })
+    });
     const data = await res.json();
-    if (data.error) { alert('인증 시작 실패: ' + data.error); return; }
+    if (!res.ok) { alert(data.error || '세션 시작 실패'); return; }
+
     currentSid = data.sid;
-    authData = { pi: data.pi, password: data.password, n: data.n };
-    mobilePaired = false;
-    document.getElementById('sessionId').textContent = currentSid;
-    document.getElementById('pairingStatus').className = 'pairing-status';
-    document.getElementById('pairingStatus').textContent = '🔄 휴대폰 페어링 대기 중... QR 코드를 휴대폰으로 스캔하세요';
-    document.getElementById('resultArea').innerHTML = '';
+    document.getElementById('sessionText').textContent = currentSid;
+    document.getElementById('resultBanner').innerHTML = '';
+    document.getElementById('newChallengeBtn').style.display = 'block';
+
+    const statusBar = document.getElementById('statusBar');
+    statusBar.className = 'status';
+    statusBar.textContent = '📱 휴대폰 페어링 대기 중… QR 코드를 휴대폰으로 스캔하세요';
 
     log('━━━ 새 인증 세션 시작 ━━━', 'info');
-    log(`세션 ID: ${currentSid}`, 'system');
+    log('세션 ID: ' + currentSid, 'system');
     log('Server: 새 π 생성 (Channel ①로 PC에 전달 → 키패드 B 렌더링)', 'success');
+
     socket.emit('join-pc', { sid: currentSid });
     log('Socket.IO: PC join', 'system');
 
-    const qrSize = 240;
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(data.mobileUrl)}&color=1E2761&bgcolor=ffffff&margin=10`;
-    document.getElementById('qrBox').innerHTML = `<img src="${qrApiUrl}" width="${qrSize}" height="${qrSize}" alt="QR" style="display:block;border-radius:8px;" onerror="this.parentNode.innerHTML='<div style=\\'padding:40px;color:#991B1B\\'>QR 생성 실패</div>'">`;
-    document.getElementById('mobileUrlText').textContent = data.mobileUrl;
-    document.getElementById('mobileUrlDisplay').style.display = 'block';
+    const qrSize = 220;
+    const qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=' + qrSize + 'x' + qrSize +
+      '&data=' + encodeURIComponent(data.mobileUrl) + '&color=1E2761&bgcolor=ffffff&margin=8';
+    document.getElementById('qrBox').innerHTML =
+      '<img src="' + qrApiUrl + '" width="' + qrSize + '" height="' + qrSize + '" alt="QR" style="display:block;border-radius:8px;" ' +
+      'onerror="this.parentElement.innerHTML=&quot;<div class=\\&quot;qr-wait\\&quot;>QR 생성 실패 — 아래 대체 URL을 이용하세요.</div>&quot;;">';
+    document.getElementById('altUrlText').textContent = data.mobileUrl;
+    document.getElementById('altUrl').style.display = 'block';
 
-    renderPadB();
-  } catch (err) { log(`오류: ${err.message}`, 'warning'); }
+    renderPadB(data.pi);
+  } catch (err) { log('오류: ' + err.message, 'warning'); }
 }
 
-function setHints(v) { if (showHints === v) return; showHints = v; renderPadB(); }
-
-function renderPadB() {
-  const { pi, password } = authData;
-  const numericIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10];
-  const cellLayout = new Array(12).fill(null);
-  for (let d = 0; d < 10; d++) cellLayout[numericIndices[pi[d]]] = d;
-
-  const highlighted = [];
-  for (let i = 0; i < password.length; i++) highlighted.push(cellLayout.indexOf(parseInt(password[i])));
-
-  const positionLabels = ['좌상단','상단','우상단','좌측','중앙','우측','좌하단','하단','우하단','','하단중앙',''];
-
-  let html = `
-    <div class="toggle-row">
-      <span class="toggle-label">💡 비밀번호 위치 강조</span>
-      <div class="seg">
-        <button class="seg-btn ${showHints ? 'active' : ''}" onclick="setHints(true)">켜짐</button>
-        <button class="seg-btn ${!showHints ? 'active' : ''}" onclick="setHints(false)">꺼짐</button>
-      </div>
-    </div>
-    <div class="mode-note">${showHints ? '시연 보조 — 비밀번호와 정답 위치를 표시합니다.' : '실전 — 숫자판만 보이며, 위치는 직접 찾습니다.'}</div>`;
-
-  if (showHints) {
-    html += `<div class="password-display"><div class="label">YOUR PASSWORD</div><div class="value">${password}</div></div>`;
-  }
-
-  html += `<div class="pad-b">`;
+// π에 따라 숫자 배치: 숫자 d는 셀 NUMERIC_INDICES[pi[d]] 에 표시 (server.js와 동일 규칙)
+function renderPadB(pi) {
+  const cellDigit = new Array(12).fill(null);
+  for (let d = 0; d < 10; d++) { cellDigit[NUMERIC_INDICES[pi[d]]] = d; }
+  let html = '<div class="pad-b">';
   for (let i = 0; i < 12; i++) {
-    const digit = cellLayout[i];
-    const isEmpty = digit === null;
-    const order = highlighted.indexOf(i);
-    const isH = showHints && order !== -1;
-    let cls = 'b-cell';
-    if (isEmpty) cls += ' empty';
-    if (isH) cls += ' highlighted';
-    const attr = isH ? `data-order="${order + 1}"` : '';
-    html += `<div class="${cls}" ${attr}>${isEmpty ? '' : digit}</div>`;
+    if (i === 9 || i === 11) html += '<div class="b-cell empty"></div>';
+    else html += '<div class="b-cell">' + cellDigit[i] + '</div>';
   }
-  html += `</div>`;
-
-  if (showHints) {
-    html += `<div class="position-guide"><strong>비밀번호 위치 (순서대로):</strong><br>`;
-    for (let i = 0; i < password.length; i++) html += `${i + 1}. <strong>${password[i]}</strong> → ${positionLabels[highlighted[i]] || '셀 ' + highlighted[i]}<br>`;
-    html += `</div>`;
-  }
-
+  html += '</div>';
   document.getElementById('padArea').innerHTML = html;
 }
 
 socket.on('mobile-paired', () => {
-  mobilePaired = true;
-  document.getElementById('pairingStatus').className = 'pairing-status connected';
-  document.getElementById('pairingStatus').innerHTML = '✓ 휴대폰 페어링 완료 · 입력 좌표는 휴대폰(키패드 A)에서만 수집됨 (PC는 클릭 위치를 알지 못함)';
-  log('Socket.IO: 휴대폰 페어링 완료 신호 수신', 'success');
-  log('Channel ②: Server → Mobile에 빈 A 패드(무표시) — π는 휴대폰으로 전송 안 됨', 'info');
+  const statusBar = document.getElementById('statusBar');
+  statusBar.className = 'status paired';
+  statusBar.textContent = '✓ 휴대폰 연결됨 · 위원님이 무표시 패드(키패드 A)에서 입력 중…';
+  log('Socket.IO: 모바일 페어링 완료 신호 수신', 'success');
+  log('Channel ②: Server → Mobile 무표시 A 패드 표시 (입력 좌표는 휴대폰에서만 수집)', 'info');
 });
 
 socket.on('auth-result', ({ success }) => {
-  const resultArea = document.getElementById('resultArea');
-  if (success) {
-    log('✓ 휴대폰 제출 → 서버 D\'=π⁻¹(C) → 커밋먼트 일치 → 인증 성공', 'success');
-    log('Server: π, D\' 메모리에서 즉시 폐기', 'system');
-    resultArea.innerHTML = '<div class="result success">✓ 인증 성공 — 비밀번호 평문이 어디에도 흐르지 않음</div>';
-  } else {
-    log('✗ 인증 실패', 'warning');
-    resultArea.innerHTML = '<div class="result failure">✗ 인증 실패 — 휴대폰에서 좌표를 다시 확인하세요</div>';
-  }
+  const banner = document.getElementById('resultBanner');
+  banner.innerHTML = success
+    ? '<div class="result-banner success">✓ 인증 성공 — 서버가 좌표 C를 π로 역매핑해 등록 참조정보와 일치 확인</div>'
+    : '<div class="result-banner failure">✗ 인증 실패 — 다시 시도하세요</div>';
+  const statusBar = document.getElementById('statusBar');
+  statusBar.className = success ? 'status paired' : 'status';
+  statusBar.textContent = success ? '✓ 인증 성공' : '✗ 인증 실패';
+  log('인증 결과 수신: ' + (success ? '성공' : '실패'), success ? 'success' : 'warning');
 });
+
+log('PC 클라이언트 준비됨. 사용자 등록 후 인증 세션을 시작하세요.', 'system');
 </script>
 </body>
 </html>

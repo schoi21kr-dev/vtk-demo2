@@ -82,7 +82,10 @@ app.post('/auth/start', (req, res) => {
   });
 });
 
-// 휴대폰(키패드 A) 페어링 — 무표시 입력 패드이므로 π·비밀번호를 받지 않음
+// 휴대폰(키패드 A) 페어링
+// 무표시 입력 패드가 기본이나, 발표자 보조용 "위치 강조"를 휴대폰에서 계산할 수 있도록
+// π와 비밀번호(위치 산출용)를 함께 전달한다.
+//   ※ 강조는 순수 표시용이며, 실제 인증 전송은 좌표 C만 사용(기존과 동일).
 app.get('/api/pair/:sid', (req, res) => {
   const { sid } = req.params;
   const session = sessions.get(sid);
@@ -93,8 +96,14 @@ app.get('/api/pair/:sid', (req, res) => {
   io.to(`pc-${sid}`).emit('mobile-paired');
   console.log(`[Pair] session=${sid} 휴대폰(키패드 A) 연결됨`);
 
-  // Channel ②: Server → Mobile (격자 형상만, π 없음)
-  res.json({ sid, n: 4 });
+  const user = users.get(session.userId);
+  // Channel ②: Server → Mobile (격자 형상 + 강조용 π·비밀번호)
+  res.json({
+    sid,
+    n: 4,
+    pi: session.pi,                 // 강조 위치 계산용
+    password: user ? user.password : null // 시연용: 위치 강조(토글)용
+  });
 });
 
 // 휴대폰(키패드 A)이 좌표 시퀀스 C 제출

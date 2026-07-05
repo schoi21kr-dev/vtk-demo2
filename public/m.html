@@ -47,6 +47,22 @@
   .error-screen { text-align: center; padding: 40px 20px; color: var(--text-muted); }
   .error-screen h2 { color: white; margin-bottom: 16px; }
   .error-screen p { font-size: 14px; line-height: 1.7; }
+  /* 비밀번호 위치 강조 (시연 보조) */
+  .hl-toggle { display: flex; align-items: center; justify-content: space-between; background: rgba(212,165,116,0.12); border: 1px solid rgba(212,165,116,0.3); border-radius: 10px; padding: 10px 14px; margin-bottom: 6px; }
+  .hl-toggle .lbl { font-size: 13px; color: var(--amber-bright); font-weight: bold; }
+  .switch { display: inline-flex; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; overflow: hidden; }
+  .switch button { border: none; background: transparent; color: var(--text-muted); font-size: 12px; font-weight: bold; padding: 6px 12px; cursor: pointer; font-family: inherit; }
+  .switch button.on { background: var(--amber); color: var(--navy-dark); }
+  .hl-note { text-align: center; font-size: 11px; color: var(--text-muted); margin: 8px 0 10px; }
+  .pw-badge { background: var(--navy-dark); border: 1px solid rgba(212,165,116,0.4); border-radius: 10px; padding: 10px; text-align: center; margin-bottom: 12px; }
+  .pw-badge .cap { font-size: 10px; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 4px; }
+  .pw-badge .val { font-size: 24px; font-weight: bold; color: var(--amber-bright); letter-spacing: 8px; }
+  .a-cell { position: relative; }
+  .cell-num { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; background: #B45309; color: #fff; border-radius: 9px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.4); pointer-events: none; }
+  .a-cell.hl { background: var(--amber); border-color: var(--amber-bright); }
+  .a-cell.hl .pt { background: var(--navy-dark); }
+  .pos-list { background: rgba(212,165,116,0.1); border-radius: 8px; padding: 12px 16px; margin-top: 12px; font-size: 12px; color: var(--amber-bright); line-height: 1.9; }
+  .pos-list .t { font-weight: bold; margin-bottom: 4px; display: block; color: var(--amber-bright); }
 </style>
 </head>
 <body>
@@ -72,6 +88,19 @@ const socket = io();
 let pwLen = 4;
 let userInput = [];
 let locked = false;
+let pi = null;          // 강조 계산용 순열
+let password = null;    // 강조 표시용 비밀번호(시연용)
+let highlightOn = false; // 위치 강조 기본 꺼짐
+
+// 격자 매핑: 숫자 d는 셀 numericIndices[pi[d]] 에 위치 (server.js와 동일 규칙)
+const NUMERIC_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10];
+const POS_LABEL = {
+  0: '좌상단', 1: '상단', 2: '우상단',
+  3: '좌중단', 4: '중단', 5: '우중단',
+  6: '좌하단', 7: '하단', 8: '우하단',
+  10: '최하단'
+};
+function cellOfDigit(d) { return NUMERIC_INDICES[pi[d]]; }
 
 async function init() {
   if (!sid) { showError('세션 ID 없음', 'PC 화면의 QR 코드를 다시 스캔하거나, URL에 ?s=세션ID 파라미터가 포함되어 있는지 확인하세요.'); return; }
@@ -80,6 +109,8 @@ async function init() {
     if (!res.ok) { const err = await res.json(); showError('페어링 실패', err.error || '세션이 만료되었거나 존재하지 않습니다.'); return; }
     const data = await res.json();
     pwLen = data.n || 4;
+    pi = data.pi || null;
+    password = (data.password != null) ? String(data.password) : null;
     socket.emit('join-mobile', { sid });
     document.getElementById('statusBadge').className = 'badge live';
     document.getElementById('statusBadge').textContent = '● LIVE · PC와 동기화됨';
@@ -92,14 +123,26 @@ function showError(title, msg) {
 }
 
 function renderPadA() {
+  const canHighlight = (pi && password);
+  const toggleHtml = canHighlight ? `
+    <div class="hl-toggle">
+      <span class="lbl">🔑 비밀번호 위치 강조</span>
+      <span class="switch">
+        <button id="hlOn">켜짐</button>
+        <button id="hlOff" class="on">꺼짐</button>
+      </span>
+    </div>` : '';
   let html = `
     <div class="instruction">
       <strong>위원님께 안내</strong><br>
       PC의 키패드 B(숫자표시)에서 본인 비밀번호 숫자의 위치를 확인한 뒤,
       아래 무표시 패드에서 <strong>같은 위치</strong>를 순서대로 누르세요.
     </div>
+    ${toggleHtml}
+    <div id="hlArea"></div>
     <div class="progress" id="progress"></div>
     <div class="pad-a" id="padA"></div>
+    <div id="posList"></div>
     <div class="controls">
       <button class="btn btn-secondary" id="clearBtn">↺ 다시</button>
       <button class="btn btn-primary" id="submitBtn" disabled>인증 제출</button>
@@ -130,8 +173,61 @@ function renderPadA() {
     padA.appendChild(cell);
   }
 
+  if (canHighlight) {
+    document.getElementById('hlOn').onclick = () => setHighlight(true);
+    document.getElementById('hlOff').onclick = () => setHighlight(false);
+    applyHighlight(); // 초기 상태(꺼짐) 반영
+  }
+
   document.getElementById('clearBtn').onclick = resetInput;
   document.getElementById('submitBtn').onclick = submitAuth;
+}
+
+function setHighlight(on) {
+  highlightOn = on;
+  document.getElementById('hlOn').classList.toggle('on', on);
+  document.getElementById('hlOff').classList.toggle('on', !on);
+  applyHighlight();
+}
+
+// 위치 강조 표시(순수 표시용 — 입력·전송에는 영향 없음)
+function applyHighlight() {
+  const hlArea = document.getElementById('hlArea');
+  const posList = document.getElementById('posList');
+  // 셀 배지·강조 초기화
+  document.querySelectorAll('.a-cell').forEach(c => {
+    c.classList.remove('hl');
+    const b = c.querySelector('.cell-num'); if (b) b.remove();
+  });
+  if (!highlightOn || !pi || !password) { hlArea.innerHTML = ''; posList.innerHTML = ''; return; }
+
+  // YOUR PASSWORD 배지
+  hlArea.innerHTML =
+    `<div class="hl-note">시연 보조 — 비밀번호와 정답 위치를 표시합니다.</div>
+     <div class="pw-badge"><div class="cap">YOUR PASSWORD</div><div class="val">${password.split('').join(' ')}</div></div>`;
+
+  // 각 자릿값의 셀에 순서 배지 + 강조, 위치 목록 구성
+  const cells = document.querySelectorAll('.pad-a .a-cell');
+  const cellByIndex = {};
+  cells.forEach(c => { if (c.dataset.index !== undefined) cellByIndex[c.dataset.index] = c; });
+  let listRows = '';
+  password.split('').forEach((ch, order) => {
+    const d = Number(ch);
+    const cellIdx = cellOfDigit(d);
+    const cell = cellByIndex[cellIdx];
+    if (cell) {
+      cell.classList.add('hl');
+      const badge = document.createElement('span');
+      badge.className = 'cell-num';
+      // 같은 셀에 이미 배지가 있으면 순서를 이어 붙임
+      const exist = cell.querySelector('.cell-num');
+      badge.textContent = exist ? (exist.textContent + ',' + (order + 1)) : (order + 1);
+      if (exist) exist.remove();
+      cell.appendChild(badge);
+    }
+    listRows += `<div>${order + 1}. ${d} → ${POS_LABEL[cellIdx] || ('셀 ' + cellIdx)}</div>`;
+  });
+  posList.innerHTML = `<div class="pos-list"><span class="t">비밀번호 위치 (순서대로):</span>${listRows}</div>`;
 }
 
 function handleCellClick(idx, el) {
