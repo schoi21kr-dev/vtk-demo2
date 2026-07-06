@@ -39,6 +39,9 @@
   .btn-secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.15); flex: 0.7; }
   .btn-primary { background: var(--amber); color: var(--navy-dark); }
   .btn-primary:disabled { opacity: 0.45; cursor: default; }
+  .btn-reshuffle { width: 100%; margin-top: 12px; padding: 13px; border: 1px solid rgba(212,165,116,0.4); border-radius: 10px; background: rgba(212,165,116,0.15); color: var(--amber-bright); font-size: 14px; font-weight: bold; cursor: pointer; font-family: inherit; }
+  .btn-reshuffle:active { transform: scale(.98); }
+  .btn-reshuffle:disabled { opacity: 0.5; cursor: default; }
   .result-banner { margin-top: 16px; padding: 14px 18px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 14px; }
   .result-banner.success { background: var(--green-bg); color: var(--green); }
   .result-banner.failure { background: var(--red-bg); color: var(--red); }
@@ -135,6 +138,7 @@ function renderPadA() {
       <button class="btn btn-secondary" id="clearBtn">↺ 다시</button>
       <button class="btn btn-primary" id="submitBtn" disabled>인증 제출</button>
     </div>
+    <button class="btn btn-reshuffle" id="reshuffleBtn">🎲 숫자판 재배치 (새 π 생성)</button>
     <div id="resultBanner"></div>
     <div class="channel-info">
       <span class="label">SESSION:</span> ${sid.substring(0, 16)}<br>
@@ -169,6 +173,29 @@ function renderPadA() {
 
   document.getElementById('clearBtn').onclick = resetInput;
   document.getElementById('submitBtn').onclick = submitAuth;
+  document.getElementById('reshuffleBtn').onclick = reshuffle;
+}
+
+// 숫자판 재배치: 현재 세션의 π만 새로 생성(세션·QR 유지). PC 숫자판 B가 갱신됨.
+async function reshuffle() {
+  const btn = document.getElementById('reshuffleBtn');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/auth/reshuffle', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sid })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) { alert(data.error || '재배치 실패'); btn.disabled = false; return; }
+    pi = data.pi || pi;
+    if (data.password != null) password = String(data.password);
+    resetInput();       // 입력 초기화
+    applyHighlight();   // 강조 켜져 있으면 새 배치로 재계산
+  } catch (err) {
+    alert('오류: ' + err.message);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function setHighlight(on) {
