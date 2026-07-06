@@ -54,15 +54,8 @@
   .switch button { border: none; background: transparent; color: var(--text-muted); font-size: 12px; font-weight: bold; padding: 6px 12px; cursor: pointer; font-family: inherit; }
   .switch button.on { background: var(--amber); color: var(--navy-dark); }
   .hl-note { text-align: center; font-size: 11px; color: var(--text-muted); margin: 8px 0 10px; }
-  .pw-badge { background: var(--navy-dark); border: 1px solid rgba(212,165,116,0.4); border-radius: 10px; padding: 10px; text-align: center; margin-bottom: 12px; }
-  .pw-badge .cap { font-size: 10px; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 4px; }
-  .pw-badge .val { font-size: 24px; font-weight: bold; color: var(--amber-bright); letter-spacing: 8px; }
   .a-cell { position: relative; }
   .cell-num { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; background: #B45309; color: #fff; border-radius: 9px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.4); pointer-events: none; }
-  .a-cell.hl { background: var(--amber); border-color: var(--amber-bright); }
-  .a-cell.hl .pt { background: var(--navy-dark); }
-  .pos-list { background: rgba(212,165,116,0.1); border-radius: 8px; padding: 12px 16px; margin-top: 12px; font-size: 12px; color: var(--amber-bright); line-height: 1.9; }
-  .pos-list .t { font-weight: bold; margin-bottom: 4px; display: block; color: var(--amber-bright); }
 </style>
 </head>
 <body>
@@ -201,22 +194,20 @@ function applyHighlight() {
   });
   if (!highlightOn || !pi || !password) { hlArea.innerHTML = ''; posList.innerHTML = ''; return; }
 
-  // YOUR PASSWORD 배지
+  // 화면 텍스트로 비밀번호·위치가 드러나지 않도록 안내 문구만 표시(비밀번호 숫자·위치 목록 없음)
   hlArea.innerHTML =
-    `<div class="hl-note">시연 보조 — 비밀번호와 정답 위치를 표시합니다.</div>
-     <div class="pw-badge"><div class="cap">YOUR PASSWORD</div><div class="val">${password.split('').join(' ')}</div></div>`;
+    `<div class="hl-note">시연 보조 — 정답 위치를 패드에 강조 표시합니다.</div>`;
 
-  // 각 자릿값의 셀에 순서 배지 + 강조, 위치 목록 구성
+  // 각 자릿값의 셀에 순서 번호 배지만 표시 (셀 배경 강조·비밀번호·위치 목록 없음)
   const cells = document.querySelectorAll('.pad-a .a-cell');
   const cellByIndex = {};
   cells.forEach(c => { if (c.dataset.index !== undefined) cellByIndex[c.dataset.index] = c; });
-  let listRows = '';
   password.split('').forEach((ch, order) => {
     const d = Number(ch);
     const cellIdx = cellOfDigit(d);
     const cell = cellByIndex[cellIdx];
     if (cell) {
-      cell.classList.add('hl');
+      // 셀 배경 강조(.hl)는 적용하지 않고, 순서 번호 배지만 표시
       const badge = document.createElement('span');
       badge.className = 'cell-num';
       // 같은 셀에 이미 배지가 있으면 순서를 이어 붙임
@@ -225,9 +216,8 @@ function applyHighlight() {
       if (exist) exist.remove();
       cell.appendChild(badge);
     }
-    listRows += `<div>${order + 1}. ${d} → ${POS_LABEL[cellIdx] || ('셀 ' + cellIdx)}</div>`;
   });
-  posList.innerHTML = `<div class="pos-list"><span class="t">비밀번호 위치 (순서대로):</span>${listRows}</div>`;
+  posList.innerHTML = '';
 }
 
 function handleCellClick(idx, el) {
