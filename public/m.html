@@ -269,7 +269,12 @@ async function submitAuth() {
     const res = await fetch('/auth/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sid, cSequence: userInput }) });
     const data = await res.json();
     showResult(data.ok);
-  } catch (err) { showError('전송 오류', err.message); }
+  } catch (err) {
+    // 전송 오류가 나도 화면(패드·토글)을 지우지 않고 실패로 처리 후 재입력 유도
+    const banner = document.getElementById('resultBanner');
+    if (banner) banner.innerHTML = '<div class="result-banner failure">✗ 전송 오류 — 다시 시도하세요</div>';
+    setTimeout(resetInput, 1600);
+  }
 }
 
 function showResult(success) {

@@ -134,7 +134,8 @@ app.post('/auth/submit', (req, res) => {
   io.to(`pc-${sid}`).emit('auth-result', { success });
   io.to(`mobile-${sid}`).emit('auth-result', { success });
 
-  session.pi = null; // π 즉시 폐기
+  // 성공 시에만 π 폐기. 실패 시에는 같은 챌린지(π)로 재시도할 수 있도록 유지.
+  if (success) session.pi = null;
   session.status = success ? 'success' : 'failure';
 
   res.json({ ok: success, computedPassword: enteredPassword, message: success ? '인증 성공' : '인증 실패' });
