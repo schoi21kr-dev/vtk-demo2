@@ -31,8 +31,7 @@
   .a-cell { aspect-ratio: 1; background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.12); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: transform .08s, background .12s; }
   .a-cell .pt { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.35); }
   .a-cell:active { transform: scale(.94); }
-  .a-cell.clicked { background: var(--amber); border-color: var(--amber-bright); }
-  .a-cell.clicked .pt { background: var(--navy-dark); }
+  .a-cell.clicked { transform: scale(.94); }
   .a-cell.empty { background: rgba(255,255,255,0.02); border: 2px dashed rgba(255,255,255,0.08); cursor: default; }
   .controls { display: flex; gap: 10px; margin-top: 16px; }
   .btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer; font-family: inherit; }
