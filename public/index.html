@@ -88,13 +88,6 @@
     <div class="panel qr-section">
       <h2>&#9312; 휴대폰으로 QR 코드 스캔</h2>
       <div class="qr-box" id="qrBox"><div class="qr-wait">인증 세션 시작 시<br>QR 코드가 표시됩니다.</div></div>
-      <div class="guide">
-        <b>&#128203; 위원님께 안내</b>
-        1. 휴대폰 카메라 앱을 여세요<br>
-        2. 위 QR 코드를 비추세요<br>
-        3. 표시되는 링크를 탭하세요<br>
-        4. 휴대폰에 무표시 좌표입력 키패드 A가 표시됩니다
-      </div>
       <div class="alt-url" id="altUrl"><b>대체 URL (QR 스캔 안 될 경우):</b><br><span id="altUrlText"></span></div>
     </div>
 
@@ -179,7 +172,7 @@ async function startAuth() {
     socket.emit('join-pc', { sid: currentSid });
     log('Socket.IO: PC join', 'system');
 
-    const qrSize = 220;
+    const qrSize = 320;
     const qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=' + qrSize + 'x' + qrSize +
       '&data=' + encodeURIComponent(data.mobileUrl) + '&color=1E2761&bgcolor=ffffff&margin=8';
     document.getElementById('qrBox').innerHTML =
