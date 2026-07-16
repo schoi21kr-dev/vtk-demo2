@@ -44,6 +44,7 @@
   .result-banner { margin-top: 16px; padding: 14px 18px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 14px; }
   .result-banner.success { background: var(--green-bg); color: var(--green); }
   .result-banner.failure { background: var(--red-bg); color: var(--red); }
+  .result-banner.prompt { background: var(--green-bg); color: #1F2937; }
   .channel-info { background: rgba(0,0,0,0.2); padding: 12px 16px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 11px; color: var(--text-muted); margin-top: 16px; line-height: 1.6; word-break: break-all; }
   .channel-info .label { color: var(--amber-bright); font-weight: bold; }
   .error-screen { text-align: center; padding: 40px 20px; color: var(--text-muted); }
@@ -138,12 +139,7 @@ function renderPadA() {
       <button class="btn btn-primary" id="submitBtn" disabled>인증 제출</button>
     </div>
     <button class="btn btn-reshuffle" id="reshuffleBtn">🎲 숫자판 재배치 (새 π 생성)</button>
-    <div id="resultBanner"></div>
-    <div class="channel-info">
-      <span class="label">SESSION:</span> ${sid.substring(0, 16)}<br>
-      <span class="label">CHANNEL:</span> ② Mobile (무표시 좌표입력)<br>
-      <span class="label">NOTE:</span> 좌표만 서버로 전송 · 비밀번호 숫자는 전송되지 않음
-    </div>`;
+    <div id="resultBanner"></div>`;
   document.getElementById('content').innerHTML = html;
 
   // 진행 점
@@ -173,6 +169,7 @@ function renderPadA() {
   document.getElementById('clearBtn').onclick = resetInput;
   document.getElementById('submitBtn').onclick = submitAuth;
   document.getElementById('reshuffleBtn').onclick = reshuffle;
+  showPrompt();
 }
 
 // 숫자판 재배치: 현재 세션의 π만 새로 생성(세션·QR 유지). PC 숫자판 B가 갱신됨.
@@ -254,11 +251,16 @@ function updateProgress() {
   document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('filled', i < userInput.length));
 }
 
+function showPrompt() {
+  const b = document.getElementById('resultBanner');
+  if (b) b.innerHTML = '<div class="result-banner prompt">비밀번호를 입력하세요.</div>';
+}
+
 function resetInput() {
   userInput = []; locked = false;
   updateProgress();
   document.getElementById('submitBtn').disabled = true;
-  document.getElementById('resultBanner').innerHTML = '';
+  showPrompt();
 }
 
 async function submitAuth() {
