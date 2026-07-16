@@ -44,7 +44,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: Date.now() 
 
 // 사용자 등록 (시연용)
 app.post('/register', (req, res) => {
-  const { userId, password } = req.body;
+  const { userId, password, sid } = req.body;
   if (!userId || !/^\d{4,8}$/.test(password)) {
     return res.status(400).json({ error: '잘못된 입력' });
   }
@@ -52,15 +52,20 @@ app.post('/register', (req, res) => {
   const commitment = sha256(password + salt);
   users.set(userId, { salt, commitment, password });
   console.log(`[Register] ${userId} commitment=${commitment.substring(0, 12)}...`);
+  // 이미 시작된 세션이 있으면 페어링된 휴대폰에 강조용 비밀번호 전달(등록 후 강조 활성화)
+  if (sid && sessions.has(sid)) {
+    io.to(`mobile-${sid}`).emit('password-set', { password });
+  }
   res.json({ ok: true });
 });
 
 // PC가 인증 세션 시작 — PC는 키패드 B(숫자)를 그려야 하므로 π를 수신
 app.post('/auth/start', (req, res) => {
   const { userId } = req.body;
-  if (!userId || !users.has(userId)) {
-    return res.status(404).json({ error: '등록되지 않은 사용자' });
+  if (!userId) {
+    return res.status(400).json({ error: '사용자 ID 필요' });
   }
+  // 등록 전에도 세션(π·QR)을 만들 수 있게 함 (화면 로드 시 QR 자동 표시용)
   const sid = generateSessionId();
   const pi = generatePi();
   sessions.set(sid, {
@@ -72,12 +77,12 @@ app.post('/auth/start', (req, res) => {
   const user = users.get(userId);
   console.log(`[AuthStart] session=${sid} userId=${userId}`);
   const baseUrl = `${req.protocol}://${req.get('host')}`;
-  // PC(키패드 B)에 π와 비밀번호(강조 표시용) 전달. Channel ①: Server → PC
+  // PC(키패드 B)에 π와 (등록된 경우) 비밀번호(강조 표시용) 전달. Channel ①: Server → PC
   res.json({
     sid,
     n: 4,
     pi,
-    password: user.password, // 시연용: 강조 표시(토글)용
+    password: user ? user.password : null, // 시연용: 강조 표시(토글)용
     mobileUrl: `${baseUrl}/m.html?s=${sid}`
   });
 });
@@ -125,6 +130,9 @@ app.post('/auth/submit', (req, res) => {
   }
   const enteredPassword = computedDigits.join('');
   const user = users.get(session.userId);
+  if (!user) {
+    return res.json({ ok: false, reason: '미등록 — 먼저 등록 및 인증을 진행하세요' });
+  }
   const computedCommitment = sha256(enteredPassword + user.salt);
   const success = computedCommitment === user.commitment;
 

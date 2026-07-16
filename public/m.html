@@ -291,6 +291,12 @@ function showResult(success) {
 // PC/서버에서 결과 통보가 와도 동일 처리 (중복 안전)
 socket.on('auth-result', ({ success }) => { if (locked) showResult(success); });
 
+// 등록 완료 시 서버가 강조용 비밀번호를 전달 → 강조 토글 활성화 (입력 전에만 재렌더)
+socket.on('password-set', ({ password: pw }) => {
+  password = String(pw);
+  if (userInput.length === 0) renderPadA();
+});
+
 init();
 </script>
 </body>
