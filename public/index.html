@@ -97,13 +97,20 @@
         <div class="alt-url" id="altUrl"><b>대체 URL (QR 스캔 안 될 경우):</b><br><span id="altUrlText"></span></div>
       </div>
 
-      <div class="panel">
-        <div class="steps-title">등록 및 인증 순서</div>
-        <ol class="steps-list">
-          <li>휴대폰으로 QR 코드를 먼저 스캔</li>
-          <li>비밀번호 4자리를 입력</li>
-          <li>등록 및 인증 버튼 클릭</li>
-        </ol>
+      <div>
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="steps-title">등록 및 인증 순서</div>
+          <ol class="steps-list">
+            <li>휴대폰으로 QR 코드를 먼저 스캔</li>
+            <li>비밀번호 4자리를 입력</li>
+            <li>등록 및 인증 버튼 클릭</li>
+          </ol>
+        </div>
+        <div class="log-panel" id="logPanel">
+          <div class="log-title">&#9614; MESSAGE FLOW LOG (실시간 서버 통신)</div>
+          <div class="log-box" id="logBox"></div>
+        </div>
+        <div id="resultBanner"></div>
       </div>
     </div>
   </div>
@@ -123,15 +130,6 @@
       </div>
       <div id="logCol2"></div>
     </div>
-  </div>
-
-  <!-- ===== 로그 (1단계: 하단 전체폭, 2단계: 우측 열로 이동) ===== -->
-  <div id="logHost">
-    <div class="log-panel" id="logPanel">
-      <div class="log-title">&#9614; MESSAGE FLOW LOG (실시간 서버 통신)</div>
-      <div class="log-box" id="logBox"></div>
-    </div>
-    <div id="resultBanner"></div>
   </div>
 </div>
 
