@@ -123,7 +123,7 @@ app.post('/auth/submit', (req, res) => {
 
   // 인증 성공 후에는 π가 폐기된 상태 → 새 숫자판을 받아야 재인증 가능
   if (!session.pi) {
-    return res.json({ ok: false, reason: '이전 인증이 끝난 숫자판입니다 — [숫자판 재배치]를 눌러 주세요' });
+    return res.json({ ok: false, reasonCode: 'stale', reason: '이전 인증이 끝난 숫자판입니다 — [숫자판 재배치]를 눌러 주세요' });
   }
 
   const numericIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10];
@@ -133,12 +133,12 @@ app.post('/auth/submit', (req, res) => {
   }
   const computedDigits = cSequence.map(cellIdx => cellLayout[cellIdx]);
   if (computedDigits.includes(null) || computedDigits.includes(undefined)) {
-    return res.json({ ok: false, reason: '잘못된 좌표' });
+    return res.json({ ok: false, reasonCode: 'badCoord', reason: '잘못된 좌표' });
   }
   const enteredPassword = computedDigits.join('');
   const user = users.get(session.userId);
   if (!user) {
-    return res.json({ ok: false, reason: '미등록 — 먼저 등록 및 인증을 진행하세요' });
+    return res.json({ ok: false, reasonCode: 'unregistered', reason: '미등록 — 먼저 등록 및 인증을 진행하세요' });
   }
   const computedCommitment = sha256(enteredPassword + user.salt);
   const success = computedCommitment === user.commitment;
