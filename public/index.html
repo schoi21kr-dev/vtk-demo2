@@ -19,10 +19,8 @@
   .header h1 { font-size: 20px; letter-spacing: .5px; }
   .header .badge { background: var(--amber); color: var(--navy-dark); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; letter-spacing: 2px; }
   .meta { text-align: center; padding: 10px 18px; margin-bottom: 12px; font-family: 'Consolas', monospace; font-size: 13px; color: var(--text-mid); }
-  .stage1-center { text-align: center; padding: 20px 0 40px; }
-  .s1-title { font-size: 17px; color: var(--navy); margin-bottom: 26px; }
-  .s1-sub { font-size: 16px; font-weight: bold; color: var(--navy); margin-bottom: 18px; }
-  .stage1-center .alt-url { display: none; max-width: 420px; margin: 14px auto 0; }
+  .qr-panel { text-align: center; }
+  .qr-panel .alt-url { display: none; max-width: 480px; margin: 14px auto 0; }
   .meta b { color: var(--navy); }
   .status { background: var(--blue-light); border: 1px solid #BEE0F5; border-radius: 8px; padding: 12px 18px; margin-bottom: 16px; font-size: 14px; color: var(--blue-dark); font-weight: bold; }
   .status.paired { background: var(--green-bg); border-color: #A7E5BD; color: var(--green); }
@@ -80,11 +78,16 @@
   <div class="meta" id="metaBar"><b>SESSION:</b> <span id="sessionText">—</span>&nbsp;&nbsp;&nbsp;<b>USER:</b> <span id="userText">—</span></div>
 
   <!-- ===== 1단계: QR 스캔 (휴대폰 페어링 대기) ===== -->
-  <div id="stage1" class="stage1-center">
-    <h2 class="s1-title">1단계 · 사용자 등록 및 인증</h2>
-    <div class="s1-sub">&#9312; 휴대폰으로 QR 코드 스캔</div>
-    <div class="qr-box" id="qrBox"><div class="qr-wait">QR 코드 로딩 중…</div></div>
-    <div class="alt-url" id="altUrl"><b>대체 URL (QR 스캔 안 될 경우):</b><br><span id="altUrlText"></span></div>
+  <div id="stage1">
+    <div class="panel title-only" style="margin-bottom:16px;">
+      <h2>1단계 · 사용자 등록 및 인증</h2>
+    </div>
+
+    <div class="panel qr-panel">
+      <h2>&#9312; 휴대폰으로 QR 코드 스캔</h2>
+      <div class="qr-box" id="qrBox"><div class="qr-wait">QR 코드 로딩 중…</div></div>
+      <div class="alt-url" id="altUrl"><b>대체 URL (QR 스캔 안 될 경우):</b><br><span id="altUrlText"></span></div>
+    </div>
   </div>
 
   <!-- ===== 2단계: 인증 (페어링 완료 시 자동 표시) ===== -->
