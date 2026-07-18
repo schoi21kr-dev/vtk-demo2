@@ -210,9 +210,9 @@ socket.on('user-registered', ({ userId }) => {
 });
 
 // 휴대폰이 '숫자판 재배치'를 요청하면 새 π를 받아 숫자판 B를 갱신
-socket.on('pi-updated', ({ pi }) => {
+socket.on('pi-updated', ({ pi, auto }) => {
   renderPadB(pi);
-  log('휴대폰 요청: 새 π 수신 → 키패드 B 숫자 재배치', 'system');
+  log(auto ? '인증 완료 → 사용한 숫자판 폐기, 새 π로 자동 재배치' : '휴대폰 요청: 새 π 수신 → 키패드 B 숫자 재배치', 'system');
 });
 
 socket.on('auth-result', ({ success }) => {
