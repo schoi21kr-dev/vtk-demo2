@@ -121,6 +121,11 @@ app.post('/auth/submit', (req, res) => {
 
   console.log(`[Submit] session=${sid} C=[${cSequence.join(',')}]`);
 
+  // 인증 성공 후에는 π가 폐기된 상태 → 새 숫자판을 받아야 재인증 가능
+  if (!session.pi) {
+    return res.json({ ok: false, reason: '이전 인증이 끝난 숫자판입니다 — [숫자판 재배치]를 눌러 주세요' });
+  }
+
   const numericIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10];
   const cellLayout = new Array(12).fill(null);
   for (let digit = 0; digit < 10; digit++) {

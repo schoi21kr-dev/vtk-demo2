@@ -239,6 +239,7 @@ function renderPwDots() {
 
 function handleCellClick(idx, el) {
   if (locked || userInput.length >= pwLen) return;
+  cancelScheduledReset();   // 새 입력 시작 → 이전 결과의 초기화 예약 취소
   userInput.push(idx);
   el.classList.add('clicked');
   setTimeout(() => el.classList.remove('clicked'), 160);
@@ -270,7 +271,18 @@ function showPrompt() {
   if (b) b.innerHTML = '<div class="result-banner prompt">비밀번호를 입력하세요.</div>';
 }
 
+// 예약된 초기화 타이머(성공·실패 후 1.6초). 사용자가 먼저 새 입력을 시작하면 취소해야 한다.
+let resetTimer = null;
+function scheduleReset(ms) {
+  if (resetTimer) clearTimeout(resetTimer);
+  resetTimer = setTimeout(() => { resetTimer = null; resetInput(); }, ms);
+}
+function cancelScheduledReset() {
+  if (resetTimer) { clearTimeout(resetTimer); resetTimer = null; }
+}
+
 function resetInput() {
+  cancelScheduledReset();
   userInput = []; locked = false;
   updateProgress();
   document.getElementById('submitBtn').disabled = true;
@@ -312,22 +324,22 @@ async function submitAuth() {
     // 2) 좌표 시퀀스 C 제출 (비밀번호 숫자는 전송되지 않음)
     const res = await fetch('/auth/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sid, cSequence: userInput }) });
     const data = await res.json();
-    showResult(data.ok);
+    showResult(data.ok, data.reason);
   } catch (err) {
     // 전송 오류가 나도 화면(패드·토글)을 지우지 않고 실패로 처리 후 재입력 유도
     const banner = document.getElementById('resultBanner');
     if (banner) banner.innerHTML = '<div class="result-banner failure">✗ 전송 오류 — 다시 시도하세요</div>';
-    setTimeout(resetInput, 1600);
+    scheduleReset(1600);
   }
 }
 
-function showResult(success) {
+function showResult(success, reason) {
   const banner = document.getElementById('resultBanner');
   if (!banner) return;
   banner.innerHTML = success
     ? '<div class="result-banner success">✓ 인증 성공</div>'
-    : '<div class="result-banner failure">✗ 인증 실패 — 다시 입력하세요</div>';
-  setTimeout(resetInput, 1600);
+    : '<div class="result-banner failure">✗ ' + (reason || '인증 실패 — 다시 입력하세요') + '</div>';
+  scheduleReset(1600);
 }
 
 // PC/서버에서 결과 통보가 와도 동일 처리 (중복 안전)
