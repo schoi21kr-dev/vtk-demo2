@@ -51,6 +51,10 @@
   .error-screen h2 { color: white; margin-bottom: 16px; }
   .error-screen p { font-size: 14px; line-height: 1.7; }
   /* 비밀번호 위치 강조 (시연 보조) */
+  .reg-box { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+  .reg-box .reg-lbl { display: block; font-size: 12px; color: var(--amber-bright); font-weight: bold; margin-bottom: 5px; }
+  .reg-box input { width: 100%; padding: 10px 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.25); color: #fff; font-size: 15px; font-family: 'Consolas', monospace; text-align: center; letter-spacing: 3px; }
+  .reg-box input:last-child { margin-bottom: 0; }
   .hl-toggle { display: flex; align-items: center; justify-content: space-between; background: rgba(212,165,116,0.12); border: 1px solid rgba(212,165,116,0.3); border-radius: 10px; padding: 10px 14px; margin-bottom: 6px; }
   .hl-toggle .lbl { font-size: 13px; color: var(--amber-bright); font-weight: bold; }
   .switch { display: inline-flex; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; overflow: hidden; }
@@ -119,7 +123,7 @@ function showError(title, msg) {
 }
 
 function renderPadA() {
-  const canHighlight = (pi && password);
+  const canHighlight = !!pi;
   const toggleHtml = canHighlight ? `
     <div class="hl-toggle">
       <span class="lbl">🔑 비밀번호 위치 강조</span>
@@ -129,6 +133,12 @@ function renderPadA() {
       </span>
     </div>` : '';
   let html = `
+    <div class="reg-box">
+      <label class="reg-lbl">사용자 ID</label>
+      <input type="text" id="userIdInput" value="demo-user" autocomplete="off">
+      <label class="reg-lbl">비밀번호 (4자리)</label>
+      <input type="password" id="passwordInput" maxlength="4" placeholder="●●●●" inputmode="numeric" autocomplete="new-password">
+    </div>
     ${toggleHtml}
     <div id="hlArea"></div>
     <div class="progress" id="progress"></div>
@@ -141,6 +151,9 @@ function renderPadA() {
     <button class="btn btn-reshuffle" id="reshuffleBtn">🎲 숫자판 재배치 (새 π 생성)</button>
     <div id="resultBanner"></div>`;
   document.getElementById('content').innerHTML = html;
+
+  // 비밀번호 입력 시 강조 표시 갱신
+  document.getElementById('passwordInput').oninput = () => { password = getPassword(); applyHighlight(); };
 
   // 진행 점
   const prog = document.getElementById('progress');
@@ -210,7 +223,7 @@ function applyHighlight() {
     c.classList.remove('hl');
     const b = c.querySelector('.cell-num'); if (b) b.remove();
   });
-  if (!highlightOn || !pi || !password) { hlArea.innerHTML = ''; posList.innerHTML = ''; return; }
+  if (!highlightOn || !pi || !password || password.length !== pwLen) { hlArea.innerHTML = ''; posList.innerHTML = ''; return; }
 
   // 화면 텍스트로 비밀번호·위치가 드러나지 않도록 안내 문구만 표시(비밀번호 숫자·위치 목록 없음)
   hlArea.innerHTML =
@@ -263,11 +276,40 @@ function resetInput() {
   showPrompt();
 }
 
+function getPassword() {
+  const el = document.getElementById('passwordInput');
+  return el ? el.value.trim() : '';
+}
+function getUserId() {
+  const el = document.getElementById('userIdInput');
+  return el ? el.value.trim() : '';
+}
+
 async function submitAuth() {
   if (userInput.length !== pwLen) return;
+  const userId = getUserId();
+  const pw = getPassword();
+  if (!userId || !/^\d{4}$/.test(pw)) {
+    const b = document.getElementById('resultBanner');
+    if (b) b.innerHTML = '<div class="result-banner failure">✗ 사용자 ID와 4자리 비밀번호를 입력하세요</div>';
+    return;
+  }
   locked = true;
   document.getElementById('submitBtn').disabled = true;
   try {
+    // 1) 등록 (서버에는 등록 참조정보(해시)만 저장)
+    const regRes = await fetch('/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, password: pw, sid })
+    });
+    const regData = await regRes.json();
+    if (!regRes.ok || !regData.ok) {
+      const b = document.getElementById('resultBanner');
+      if (b) b.innerHTML = '<div class="result-banner failure">✗ 등록 실패 — 입력을 확인하세요</div>';
+      locked = false; document.getElementById('submitBtn').disabled = false;
+      return;
+    }
+    // 2) 좌표 시퀀스 C 제출 (비밀번호 숫자는 전송되지 않음)
     const res = await fetch('/auth/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sid, cSequence: userInput }) });
     const data = await res.json();
     showResult(data.ok);
@@ -290,12 +332,6 @@ function showResult(success) {
 
 // PC/서버에서 결과 통보가 와도 동일 처리 (중복 안전)
 socket.on('auth-result', ({ success }) => { if (locked) showResult(success); });
-
-// 등록 완료 시 서버가 강조용 비밀번호를 전달 → 강조 토글 활성화 (입력 전에만 재렌더)
-socket.on('password-set', ({ password: pw }) => {
-  password = String(pw);
-  if (userInput.length === 0) renderPadA();
-});
 
 init();
 </script>

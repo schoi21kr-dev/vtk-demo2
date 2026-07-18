@@ -52,9 +52,11 @@ app.post('/register', (req, res) => {
   const commitment = sha256(password + salt);
   users.set(userId, { salt, commitment, password });
   console.log(`[Register] ${userId} commitment=${commitment.substring(0, 12)}...`);
-  // 이미 시작된 세션이 있으면 페어링된 휴대폰에 강조용 비밀번호 전달(등록 후 강조 활성화)
+  // 휴대폰에서 등록한 경우: 세션의 사용자와 연결하고 PC에 알림
   if (sid && sessions.has(sid)) {
-    io.to(`mobile-${sid}`).emit('password-set', { password });
+    const session = sessions.get(sid);
+    session.userId = userId;
+    io.to(`pc-${sid}`).emit('user-registered', { userId });
   }
   res.json({ ok: true });
 });
