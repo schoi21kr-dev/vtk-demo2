@@ -3,8 +3,8 @@
  * PG502 표준화 검토 시연 — 데모 1의 기기 역할 교체판
  *
  * 구성:
- *  - PC      : 키패드 B (0~9 숫자표시) + QR. π를 받아 숫자판을 렌더링(참조용).
- *  - 휴대폰  : 키패드 A (무표시 좌표입력). 사용자가 좌표를 탭하여 제출.
+ *  - PC      : VNK (0~9 숫자표시) + QR. π를 받아 VNK를 렌더링(참조용).
+ *  - 휴대폰  : VIK (무표시 좌표입력). 사용자가 좌표를 탭하여 제출.
  *  - 서버    : 휴대폰이 보낸 좌표열 C를 π로 역매핑하여 인증 판정.
  *
  * 보안 포인트(데모 1과 대칭):
@@ -61,7 +61,7 @@ app.post('/register', (req, res) => {
   res.json({ ok: true });
 });
 
-// PC가 인증 세션 시작 — PC는 키패드 B(숫자)를 그려야 하므로 π를 수신
+// PC가 인증 세션 시작 — PC는 VNK(숫자)를 그려야 하므로 π를 수신
 app.post('/auth/start', (req, res) => {
   const { userId } = req.body;
   if (!userId) {
@@ -79,7 +79,7 @@ app.post('/auth/start', (req, res) => {
   const user = users.get(userId);
   console.log(`[AuthStart] session=${sid} userId=${userId}`);
   const baseUrl = `${req.protocol}://${req.get('host')}`;
-  // PC(키패드 B)에 π와 (등록된 경우) 비밀번호(강조 표시용) 전달. Channel ①: Server → PC
+  // PC(VNK)에 π와 (등록된 경우) 비밀번호(강조 표시용) 전달. Channel ①: Server → PC
   res.json({
     sid,
     n: 4,
@@ -89,7 +89,7 @@ app.post('/auth/start', (req, res) => {
   });
 });
 
-// 휴대폰(키패드 A) 페어링
+// 휴대폰(VIK) 페어링
 // 무표시 입력 패드가 기본이나, 발표자 보조용 "위치 강조"를 휴대폰에서 계산할 수 있도록
 // π와 비밀번호(위치 산출용)를 함께 전달한다.
 //   ※ 강조는 순수 표시용이며, 실제 인증 전송은 좌표 C만 사용(기존과 동일).
@@ -101,7 +101,7 @@ app.get('/api/pair/:sid', (req, res) => {
   session.mobileConnected = true;
   session.status = 'waiting_for_mobile_input';
   io.to(`pc-${sid}`).emit('mobile-paired');
-  console.log(`[Pair] session=${sid} 휴대폰(키패드 A) 연결됨`);
+  console.log(`[Pair] session=${sid} 휴대폰(VIK) 연결됨`);
 
   const user = users.get(session.userId);
   // Channel ②: Server → Mobile (격자 형상 + 강조용 π·비밀번호)
@@ -113,7 +113,7 @@ app.get('/api/pair/:sid', (req, res) => {
   });
 });
 
-// 휴대폰(키패드 A)이 좌표 시퀀스 C 제출
+// 휴대폰(VIK)이 좌표 시퀀스 C 제출
 app.post('/auth/submit', (req, res) => {
   const { sid, cSequence } = req.body;
   const session = sessions.get(sid);
@@ -121,9 +121,9 @@ app.post('/auth/submit', (req, res) => {
 
   console.log(`[Submit] session=${sid} C=[${cSequence.join(',')}]`);
 
-  // 인증 성공 후에는 π가 폐기된 상태 → 새 숫자판을 받아야 재인증 가능
+  // 인증 성공 후에는 π가 폐기된 상태 → 새 VNK를 받아야 재인증 가능
   if (!session.pi) {
-    return res.json({ ok: false, reasonCode: 'stale', reason: '이전 인증이 끝난 숫자판입니다 — [숫자판 재배치]를 눌러 주세요' });
+    return res.json({ ok: false, reasonCode: 'stale', reason: '이전 인증이 끝난 VNK입니다 — [VNK 재배치]를 눌러 주세요' });
   }
 
   const numericIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10];
@@ -162,7 +162,7 @@ app.post('/auth/submit', (req, res) => {
 });
 
 // 휴대폰이 요청: 현재 세션의 π만 새로 섞음 (세션·페어링·QR 유지)
-//  - 새 π를 세션에 저장하고, PC(키패드 B)에 소켓으로 새 π를 push하여 숫자판 갱신
+//  - 새 π를 세션에 저장하고, PC(VNK)에 소켓으로 새 π를 push하여 숫자판 갱신
 //  - 휴대폰의 무표시 패드는 그대로, 강조 계산용으로 새 π·password를 응답
 app.post('/auth/reshuffle', (req, res) => {
   const { sid } = req.body;
@@ -200,7 +200,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`\n╔═══════════════════════════════════════════╗`);
   console.log(`║  VTK Multi-Device Demo 2 Server           ║`);
-  console.log(`║  PC=키패드 B(숫자) / 휴대폰=키패드 A(무표시) ║`);
+  console.log(`║  PC=VNK(숫자) / 휴대폰=VIK(무표시) ║`);
   console.log(`╚═══════════════════════════════════════════╝`);
   console.log(`Port: ${PORT}`);
 });
