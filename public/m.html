@@ -55,12 +55,6 @@
   .reg-box .reg-lbl { display: block; font-size: 12px; color: var(--amber-bright); font-weight: bold; margin-bottom: 5px; }
   .reg-box input { width: 100%; padding: 10px 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.25); color: #fff; font-size: 15px; font-family: 'Consolas', monospace; text-align: center; letter-spacing: 3px; }
   .reg-box input:last-child { margin-bottom: 0; }
-  .hl-toggle { display: flex; align-items: center; justify-content: space-between; background: rgba(212,165,116,0.12); border: 1px solid rgba(212,165,116,0.3); border-radius: 10px; padding: 10px 14px; margin-bottom: 6px; }
-  .hl-toggle .lbl { font-size: 13px; color: var(--amber-bright); font-weight: bold; }
-  .switch { display: inline-flex; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; overflow: hidden; }
-  .switch button { border: none; background: transparent; color: var(--text-muted); font-size: 12px; font-weight: bold; padding: 6px 12px; cursor: pointer; font-family: inherit; }
-  .switch button.on { background: var(--amber); color: var(--navy-dark); }
-  .hl-note { text-align: center; font-size: 11px; color: var(--text-muted); margin: 8px 0 10px; }
   .a-cell { position: relative; }
   .cell-num { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; background: #B45309; color: #fff; border-radius: 9px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.4); pointer-events: none; }
 </style>
@@ -89,8 +83,10 @@ let pwLen = 4;
 let userInput = [];
 let locked = false;
 let pi = null;          // 강조 계산용 순열
-let password = null;    // 강조 표시용 비밀번호(시연용)
-let highlightOn = false; // 위치 강조 기본 꺼짐
+let password = null;    // 사용자가 입력한 비밀번호(등록 전송용)
+let pwDigits = [];      // 입력 중인 비밀번호 숫자(화면에는 노출되지 않음)
+const MASK_CHAR = '●';  // 입력 즉시 치환되는 마스킹 문자
+let highlightOn = false; // 위치 강조 기능 제거(항상 꺼짐)
 
 // 격자 매핑: 숫자 d는 셀 numericIndices[pi[d]] 에 위치 (server.js와 동일 규칙)
 const NUMERIC_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10];
@@ -123,23 +119,14 @@ function showError(title, msg) {
 }
 
 function renderPadA() {
-  const canHighlight = !!pi;
-  const toggleHtml = canHighlight ? `
-    <div class="hl-toggle">
-      <span class="lbl">🔑 비밀번호 위치 강조</span>
-      <span class="switch">
-        <button id="hlOn">켜짐</button>
-        <button id="hlOff" class="on">꺼짐</button>
-      </span>
-    </div>` : '';
   let html = `
     <div class="reg-box">
       <label class="reg-lbl">사용자 ID</label>
       <input type="text" id="userIdInput" value="demo-user" autocomplete="off">
       <label class="reg-lbl">비밀번호 (4자리)</label>
-      <input type="password" id="passwordInput" maxlength="4" placeholder="●●●●" inputmode="numeric" autocomplete="new-password">
+      <input type="text" id="passwordInput" placeholder="●●●●" inputmode="numeric" autocomplete="off"
+             autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
-    ${toggleHtml}
     <div id="hlArea"></div>
     <div class="progress" id="progress"></div>
     <div class="pad-a" id="padA"></div>
@@ -152,8 +139,9 @@ function renderPadA() {
     <div id="resultBanner"></div>`;
   document.getElementById('content').innerHTML = html;
 
-  // 비밀번호 입력 시 강조 표시 갱신
-  document.getElementById('passwordInput').oninput = () => { password = getPassword(); applyHighlight(); };
+  // 비밀번호: 실제 숫자는 pwDigits에만 보관하고 화면에는 즉시 ●로 치환(입력 순간 노출 방지)
+  pwDigits = [];
+  document.getElementById('passwordInput').addEventListener('input', onPasswordInput);
 
   // 진행 점
   const prog = document.getElementById('progress');
@@ -171,12 +159,6 @@ function renderPadA() {
       cell.onclick = () => handleCellClick(i, cell);
     }
     padA.appendChild(cell);
-  }
-
-  if (canHighlight) {
-    document.getElementById('hlOn').onclick = () => setHighlight(true);
-    document.getElementById('hlOff').onclick = () => setHighlight(false);
-    applyHighlight(); // 초기 상태(꺼짐) 반영
   }
 
   document.getElementById('clearBtn').onclick = resetInput;
@@ -207,48 +189,30 @@ async function reshuffle() {
   }
 }
 
-function setHighlight(on) {
-  highlightOn = on;
-  document.getElementById('hlOn').classList.toggle('on', on);
-  document.getElementById('hlOff').classList.toggle('on', !on);
-  applyHighlight();
-}
-
-// 위치 강조 표시(순수 표시용 — 입력·전송에는 영향 없음)
+// 위치 강조 기능은 제거됨(항상 꺼짐). 남은 표시 영역만 비워 둔다.
 function applyHighlight() {
   const hlArea = document.getElementById('hlArea');
   const posList = document.getElementById('posList');
-  // 셀 배지·강조 초기화
   document.querySelectorAll('.a-cell').forEach(c => {
     c.classList.remove('hl');
     const b = c.querySelector('.cell-num'); if (b) b.remove();
   });
-  if (!highlightOn || !pi || !password || password.length !== pwLen) { hlArea.innerHTML = ''; posList.innerHTML = ''; return; }
+  if (hlArea) hlArea.innerHTML = '';
+  if (posList) posList.innerHTML = '';
+}
 
-  // 화면 텍스트로 비밀번호·위치가 드러나지 않도록 안내 문구만 표시(비밀번호 숫자·위치 목록 없음)
-  hlArea.innerHTML =
-    `<div class="hl-note">시연 보조 — 정답 위치를 패드에 강조 표시합니다.</div>`;
-
-  // 각 자릿값의 셀에 순서 번호 배지만 표시 (셀 배경 강조·비밀번호·위치 목록 없음)
-  const cells = document.querySelectorAll('.pad-a .a-cell');
-  const cellByIndex = {};
-  cells.forEach(c => { if (c.dataset.index !== undefined) cellByIndex[c.dataset.index] = c; });
-  password.split('').forEach((ch, order) => {
-    const d = Number(ch);
-    const cellIdx = cellOfDigit(d);
-    const cell = cellByIndex[cellIdx];
-    if (cell) {
-      // 셀 배경 강조(.hl)는 적용하지 않고, 순서 번호 배지만 표시
-      const badge = document.createElement('span');
-      badge.className = 'cell-num';
-      // 같은 셀에 이미 배지가 있으면 순서를 이어 붙임
-      const exist = cell.querySelector('.cell-num');
-      badge.textContent = exist ? (exist.textContent + ',' + (order + 1)) : (order + 1);
-      if (exist) exist.remove();
-      cell.appendChild(badge);
-    }
-  });
-  posList.innerHTML = '';
+// 비밀번호 입력: 실제 숫자는 pwDigits에만 저장하고, 화면 값은 곧바로 ●로 치환
+function onPasswordInput(e) {
+  const el = e.target;
+  const v = el.value;
+  const typed = v.split('').filter(ch => ch !== MASK_CHAR);
+  const keptMasks = v.length - typed.length;
+  if (keptMasks < pwDigits.length) pwDigits = pwDigits.slice(0, keptMasks); // 지우기
+  for (const ch of typed) {
+    if (/[0-9]/.test(ch) && pwDigits.length < pwLen) pwDigits.push(ch);
+  }
+  el.value = MASK_CHAR.repeat(pwDigits.length);
+  password = pwDigits.join('');
 }
 
 function handleCellClick(idx, el) {
@@ -277,8 +241,7 @@ function resetInput() {
 }
 
 function getPassword() {
-  const el = document.getElementById('passwordInput');
-  return el ? el.value.trim() : '';
+  return pwDigits.join('');
 }
 function getUserId() {
   const el = document.getElementById('userIdInput');
