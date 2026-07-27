@@ -59,6 +59,15 @@
   .reg-box input { width: 100%; padding: 8px 12px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.25); color: #fff; font-size: 15px; font-family: 'Consolas', monospace; text-align: center; letter-spacing: 3px; }
   /* 비밀번호 표시: 진행 점(.dot)과 동일한 요소를 입력창 위에 겹쳐 표시 → 크기·색상·간격 동일 */
   .reg-box input:last-child { margin-bottom: 0; }
+  .pw-change { margin-top: 14px; text-align: center; }
+  .pw-toggle { color: rgba(255,255,255,0.45); font-size: 12px; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.3); }
+  .pw-toggle:active { color: var(--amber-bright); }
+  .pw-panel { display: flex; gap: 8px; margin-top: 10px; }
+  .pw-panel input { flex: 1; padding: 8px 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.25); color: #fff; font-size: 15px; font-family: 'Consolas', monospace; text-align: center; letter-spacing: 3px; }
+  .pw-panel .btn { flex: 0 0 auto; margin: 0; padding: 8px 16px; }
+  .pw-msg { font-size: 12px; margin-top: 8px; min-height: 14px; }
+  .pw-msg.ok { color: #7CE0A0; }
+  .pw-msg.ng { color: #FF9B9B; }
   .a-cell { position: relative; }
   .cell-num { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; background: #B45309; color: #fff; border-radius: 9px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.4); pointer-events: none; }
 </style>
@@ -89,7 +98,8 @@ let userInput = [];
 let locked = false;
 let pi = null;          // 강조 계산용 순열
 let password = null;    // 사용자가 입력한 비밀번호(등록 전송용)
-const FIXED_PASSWORD = '1357';  // 시연용 고정 비밀번호(휴대폰 입력창 제거)
+const DEFAULT_PASSWORD = '1357';  // 기본 비밀번호
+let activePassword = DEFAULT_PASSWORD;  // 이번 세션에서 사용할 비밀번호(저장하지 않음)
 let highlightOn = false; // 위치 강조 기능 제거(항상 꺼짐)
 
 // 격자 매핑: 숫자 d는 셀 numericIndices[pi[d]] 에 위치 (server.js와 동일 규칙)
@@ -112,6 +122,11 @@ const I18N = {
     btnClear: '↺ 다시',
     btnSubmit: '인증 제출',
     btnReshuffle: '🎲 VNK 재배치 (새 π 생성)',
+    pwChangeLink: '⚙ 비밀번호 변경',
+    pwChangePlaceholder: '새 비밀번호 4자리',
+    pwChangeApply: '적용',
+    pwChanged: '✓ 비밀번호가 변경되었습니다',
+    pwInvalid: '✗ 숫자 4자리를 입력하세요',
     promptEnter: '비밀번호를 입력하세요.',
     needInput: '✗ 사용자 ID를 입력하세요',
     regFailed: '✗ 등록 실패 — 입력을 확인하세요',
@@ -137,6 +152,11 @@ const I18N = {
     btnClear: '↺ Clear',
     btnSubmit: 'Submit',
     btnReshuffle: '🎲 Reshuffle VNK (new π)',
+    pwChangeLink: '⚙ Change password',
+    pwChangePlaceholder: 'New 4-digit password',
+    pwChangeApply: 'Apply',
+    pwChanged: '✓ Password changed',
+    pwInvalid: '✗ Enter exactly 4 digits',
     promptEnter: 'Enter your password.',
     needInput: '✗ Enter your user ID',
     regFailed: '✗ Registration failed — please check your input',
@@ -183,6 +203,8 @@ function applyLanguage() {
 function redrawTexts() {
   const set = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = t(key); };
   set('clearBtn', 'btnClear'); set('submitBtn', 'btnSubmit'); set('reshuffleBtn', 'btnReshuffle');
+  set('pwToggle', 'pwChangeLink'); set('pwApply', 'pwChangeApply');
+  const pwNew = document.getElementById('pwNew'); if (pwNew) pwNew.placeholder = t('pwChangePlaceholder');
   const lbls = document.querySelectorAll('.reg-box .reg-lbl');
   if (lbls[0]) lbls[0].textContent = t('labelUserId');
   if (lastResult) showResult(lastResult.success, null, lastResult.reasonCode);
@@ -236,7 +258,15 @@ function renderPadA() {
       <button class="btn btn-primary" id="submitBtn" disabled>${t('btnSubmit')}</button>
     </div>
     <button class="btn btn-reshuffle" id="reshuffleBtn">${t('btnReshuffle')}</button>
-    <div id="resultBanner"></div>`;
+    <div id="resultBanner"></div>
+    <div class="pw-change">
+      <a href="#" id="pwToggle" class="pw-toggle">${t('pwChangeLink')}</a>
+      <div id="pwPanel" class="pw-panel" style="display:none;">
+        <input type="text" id="pwNew" inputmode="numeric" maxlength="4" placeholder="${t('pwChangePlaceholder')}" autocomplete="off">
+        <button class="btn btn-secondary" id="pwApply">${t('pwChangeApply')}</button>
+      </div>
+      <div id="pwMsg" class="pw-msg"></div>
+    </div>`;
   document.getElementById('content').innerHTML = html;
 
   // 진행 점
@@ -261,7 +291,34 @@ function renderPadA() {
   document.getElementById('clearBtn').onclick = resetInput;
   document.getElementById('submitBtn').onclick = submitAuth;
   document.getElementById('reshuffleBtn').onclick = reshuffle;
+
+  // 비밀번호 변경 UI (이번 세션에만 적용, 저장하지 않음)
+  document.getElementById('pwToggle').onclick = (e) => {
+    e.preventDefault();
+    const panel = document.getElementById('pwPanel');
+    panel.style.display = (panel.style.display === 'none') ? 'flex' : 'none';
+    if (panel.style.display === 'flex') { document.getElementById('pwNew').focus(); fitToScreen(); }
+  };
+  document.getElementById('pwApply').onclick = applyPasswordChange;
+
   showPrompt();
+}
+
+function applyPasswordChange() {
+  const el = document.getElementById('pwNew');
+  const msg = document.getElementById('pwMsg');
+  const v = el.value.trim();
+  if (!/^\d{4}$/.test(v)) {
+    msg.className = 'pw-msg ng';
+    msg.textContent = t('pwInvalid');
+    return;
+  }
+  activePassword = v;          // 이번 세션에만 반영(새로고침·새 QR이면 기본값으로 돌아감)
+  resetInput();                // 입력 중이던 좌표 초기화
+  el.value = '';
+  document.getElementById('pwPanel').style.display = 'none';
+  msg.className = 'pw-msg ok';
+  msg.textContent = t('pwChanged');
 }
 
 // 숫자판 재배치: 현재 세션의 π만 새로 생성(세션·QR 유지). PC 숫자판 B가 갱신됨.
@@ -352,7 +409,7 @@ function resetInput() {
 }
 
 function getPassword() {
-  return FIXED_PASSWORD;   // 고정 비밀번호
+  return activePassword;   // 이번 세션의 비밀번호(기본 1357)
 }
 function getUserId() {
   const el = document.getElementById('userIdInput');
