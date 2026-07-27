@@ -100,6 +100,7 @@ let pi = null;          // 강조 계산용 순열
 let password = null;    // 사용자가 입력한 비밀번호(등록 전송용)
 const DEFAULT_PASSWORD = '1357';  // 기본 비밀번호
 let activePassword = DEFAULT_PASSWORD;  // 이번 세션에서 사용할 비밀번호(저장하지 않음)
+let pwChangeUnlocked = false;  // 인증 성공 1회 후에만 비밀번호 변경 허용
 let highlightOn = false; // 위치 강조 기능 제거(항상 꺼짐)
 
 // 격자 매핑: 숫자 d는 셀 numericIndices[pi[d]] 에 위치 (server.js와 동일 규칙)
@@ -257,7 +258,7 @@ function renderPadA() {
     </div>
     <button class="btn btn-reshuffle" id="reshuffleBtn">${t('btnReshuffle')}</button>
     <div id="resultBanner"></div>
-    <div class="pw-change">
+    <div class="pw-change" id="pwChange" style="display:none;">
       <a href="#" id="pwToggle" class="pw-toggle">${t('pwChangeLink')}</a>
       <div id="pwPanel" class="pw-panel" style="display:none;">
         <input type="text" id="pwNew" inputmode="numeric" maxlength="4" placeholder="${t('pwChangePlaceholder')}" autocomplete="off">
@@ -298,8 +299,20 @@ function renderPadA() {
     if (panel.style.display === 'flex') { document.getElementById('pwNew').focus(); fitToScreen(); }
   };
   document.getElementById('pwApply').onclick = applyPasswordChange;
+  reflectPwLock();
 
   showPrompt();
+}
+
+// 인증 성공 여부에 따라 비밀번호 변경 링크 잠금/해제 표시
+function reflectPwLock() {
+  const box = document.getElementById('pwChange');
+  if (!box) return;
+  box.style.display = pwChangeUnlocked ? 'block' : 'none';  // 인증 성공 전에는 숨김
+  if (!pwChangeUnlocked) {
+    const panel = document.getElementById('pwPanel');
+    if (panel) panel.style.display = 'none';
+  }
 }
 
 function applyPasswordChange() {
@@ -452,6 +465,7 @@ async function submitAuth() {
 
 function showResult(success, reason, reasonCode) {
   lastResult = { success, reasonCode };
+  if (success) { pwChangeUnlocked = true; reflectPwLock(); }  // 인증 성공 후 변경 허용
   const banner = document.getElementById('resultBanner');
   if (!banner) return;
   banner.innerHTML = success
