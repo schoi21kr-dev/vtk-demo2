@@ -26,8 +26,6 @@
   .qr-panel { text-align: center; }
   .qr-panel .alt-url { display: none; max-width: 480px; margin: 14px auto 0; }
   .meta b { color: var(--navy); }
-  .status { background: var(--blue-light); border: 1px solid #BEE0F5; border-radius: 8px; padding: 12px 18px; margin-bottom: 16px; font-size: 14px; color: var(--blue-dark); font-weight: bold; }
-  .status.paired { background: var(--green-bg); border-color: #A7E5BD; color: var(--green); }
   .panel { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid var(--border); }
   .panel h2 { font-size: 17px; color: var(--navy); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--ice); text-align: center; }
   /* 2단계 제목 패널: 밑줄 없이 글자 높이에 맞춘 크기 */
@@ -87,7 +85,7 @@
   <!-- ===== 1단계: QR 스캔 (휴대폰 페어링 대기) ===== -->
   <div id="stage1">
     <div class="panel title-only" style="margin-bottom:16px;">
-      <h2 data-i18n="stage1Title">1단계 · 사용자 등록 및 인증</h2>
+      <h2 data-i18n="stage1Title">1단계</h2>
     </div>
 
     <div class="panel qr-panel">
@@ -99,16 +97,15 @@
 
   <!-- ===== 2단계: 인증 (페어링 완료 시 자동 표시) ===== -->
   <div id="stage2" style="display:none;">
-    <div class="status paired" id="statusBar" data-i18n="statusPaired">휴대폰 페어링 완료 · 휴대폰에서 ID·비밀번호를 입력하세요</div>
 
     <div class="panel title-only" style="margin-bottom:16px;">
-      <h2 data-i18n="stage2Title">2단계 사용자 인증</h2>
+      <h2 data-i18n="stage2Title">2단계</h2>
     </div>
 
     <div class="main-grid">
       <div class="panel">
         <h2 data-i18n="padBHeading">&#9313; VNK &middot; 숫자표시 (PC)</h2>
-        <div class="pad-note" data-i18n-html="padNote">이 VNK에서 비밀번호 4자리의 <b>위치</b>를 확인하세요.<br>실제 입력(탭)은 휴대폰의 VIK(무표시)에서 합니다.</div>
+        <div class="pad-note" data-i18n-html="padNote">아래 가상 숫자키패드에서 비밀번호 4자리의 <b>위치</b>를 확인 후 휴대폰의 가상 입력키패드에서 비밀번호 위치를 터치하세요.</div>
         <div id="padArea"><div class="pad-wait" data-i18n-html="padWait">인증 세션을 시작하면<br>VNK가 표시됩니다.</div></div>
       </div>
       <div>
@@ -135,18 +132,16 @@ const NUMERIC_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10]; // 9·11은 빈 셀
 const I18N = {
   ko: {
     appTitle: 'VTK 멀티디바이스 시연 · PC (Live) · 데모 2',
-    stage1Title: '1단계 · 사용자 등록 및 인증',
+    stage1Title: '1단계',
     qrHeading: '\u2460 휴대폰으로 QR 코드 스캔',
     qrLoading: 'QR 코드 로딩 중…',
     qrFailed: 'QR 생성 실패 — 아래 대체 URL을 이용하세요.',
     altUrlLabel: '대체 URL (QR 스캔 안 될 경우):',
-    stage2Title: '2단계 사용자 인증',
+    stage2Title: '2단계',
     padBHeading: '\u2461 VNK · 숫자표시 (PC)',
-    padNote: '이 VNK에서 비밀번호 4자리의 <b>위치</b>를 확인하세요.<br>실제 입력(탭)은 휴대폰의 VIK(무표시)에서 합니다.',
+    padNote: '아래 가상 숫자키패드에서 비밀번호 4자리의 <b>위치</b>를 확인 후 휴대폰의 가상 입력키패드에서 비밀번호 위치를 터치하세요.',
     padWait: '인증 세션을 시작하면<br>VNK가 표시됩니다.',
     logTitle: '\u258E MESSAGE FLOW LOG (실시간 서버 통신)',
-    statusPaired: '휴대폰 페어링 완료 · 휴대폰에서 ID·비밀번호를 입력하세요',
-    statusRegistered: '등록 완료 · 휴대폰에서 비밀번호 위치를 입력하세요',
     userPending: '(휴대폰에서 입력)',
     logReady: 'PC 클라이언트 준비됨.',
     logSessionHead: '━━━ 인증 세션 준비 ━━━',
@@ -168,18 +163,16 @@ const I18N = {
   },
   en: {
     appTitle: 'VTK Multi-Device Demonstration · PC (Live) · Demo 2',
-    stage1Title: 'Step 1 · User Registration & Authentication',
+    stage1Title: 'Step 1',
     qrHeading: '\u2460 Scan the QR Code with Your Phone',
     qrLoading: 'Loading QR code…',
     qrFailed: 'QR generation failed — please use the alternate URL below.',
     altUrlLabel: 'Alternate URL (if the QR code cannot be scanned):',
-    stage2Title: 'Step 2 · User Authentication',
+    stage2Title: 'Step 2',
     padBHeading: '\u2461 VNK · Numbered (PC)',
-    padNote: 'Check the <b>positions</b> of your 4-digit password on this VNK.<br>The actual taps are made on the VIK (blank) on your phone.',
+    padNote: 'Find the <b>positions</b> of your 4-digit password on the virtual numeric keypad below, then touch those positions on the virtual input keypad on your phone.',
     padWait: 'The VNK will appear<br>once the authentication session starts.',
     logTitle: '\u258E MESSAGE FLOW LOG (live server communication)',
-    statusPaired: 'Phone paired · Enter your ID and password on the phone',
-    statusRegistered: 'Registration complete · Enter the password positions on your phone',
     userPending: '(entered on phone)',
     logReady: 'PC client ready.',
     logSessionHead: '━━━ Authentication session ready ━━━',
@@ -219,7 +212,6 @@ function applyLanguage() {
   document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
   document.getElementById('langKo').classList.toggle('on', LANG === 'ko');
   document.getElementById('langEn').classList.toggle('on', LANG === 'en');
-  if (statusKey) document.getElementById('statusBar').textContent = t(statusKey);
   if (!registeredUserId) {
     const ut = document.getElementById('userText');
     if (ut) ut.textContent = t('userPending');
@@ -238,7 +230,6 @@ function setLanguage(lang) {
   applyLanguage();
 }
 
-let statusKey = null;
 let registeredUserId = null;
 let currentMobileUrl = null;
 
@@ -341,10 +332,6 @@ function renderPadB(pi) {
 }
 
 socket.on('mobile-paired', () => {
-  statusKey = 'statusPaired';
-  const statusBar = document.getElementById('statusBar');
-  statusBar.className = 'status paired';
-  statusBar.textContent = t(statusKey);
   log('logPaired', 'success');
   log('logChannel2', 'info');
   showStage2();
@@ -354,10 +341,6 @@ socket.on('mobile-paired', () => {
 socket.on('user-registered', ({ userId }) => {
   registeredUserId = userId;
   document.getElementById('userText').textContent = userId;
-  statusKey = 'statusRegistered';
-  const statusBar = document.getElementById('statusBar');
-  statusBar.className = 'status paired';
-  statusBar.textContent = t(statusKey);
   log('logRegistered', 'success');
 });
 
