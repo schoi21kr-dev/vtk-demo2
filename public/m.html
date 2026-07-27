@@ -58,9 +58,6 @@
   .reg-box .reg-lbl { display: block; font-size: 12px; color: var(--amber-bright); font-weight: bold; margin-bottom: 5px; }
   .reg-box input { width: 100%; padding: 8px 12px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.25); color: #fff; font-size: 15px; font-family: 'Consolas', monospace; text-align: center; letter-spacing: 3px; }
   /* 비밀번호 표시: 진행 점(.dot)과 동일한 요소를 입력창 위에 겹쳐 표시 → 크기·색상·간격 동일 */
-  .pw-wrap { position: relative; margin-bottom: 8px; }
-  .pw-wrap input { margin-bottom: 0; color: transparent; caret-color: transparent; letter-spacing: normal; }
-  .pw-dots { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px; pointer-events: none; }
   .reg-box input:last-child { margin-bottom: 0; }
   .a-cell { position: relative; }
   .cell-num { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; background: #B45309; color: #fff; border-radius: 9px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.4); pointer-events: none; }
@@ -92,8 +89,7 @@ let userInput = [];
 let locked = false;
 let pi = null;          // 강조 계산용 순열
 let password = null;    // 사용자가 입력한 비밀번호(등록 전송용)
-let pwDigits = [];      // 입력 중인 비밀번호 숫자(화면에는 노출되지 않음)
-const MASK_CHAR = '●';  // 입력 즉시 치환되는 마스킹 문자
+const FIXED_PASSWORD = '1357';  // 시연용 고정 비밀번호(휴대폰 입력창 제거)
 let highlightOn = false; // 위치 강조 기능 제거(항상 꺼짐)
 
 // 격자 매핑: 숫자 d는 셀 numericIndices[pi[d]] 에 위치 (server.js와 동일 규칙)
@@ -113,12 +109,11 @@ const I18N = {
     connecting: '서버에 연결 중...',
     statusLive: '● LIVE · PC와 동기화됨',
     labelUserId: '사용자 ID',
-    labelPassword: '비밀번호 (4자리)',
     btnClear: '↺ 다시',
     btnSubmit: '인증 제출',
     btnReshuffle: '🎲 VNK 재배치 (새 π 생성)',
     promptEnter: '비밀번호를 입력하세요.',
-    needInput: '✗ 사용자 ID와 4자리 비밀번호를 입력하세요',
+    needInput: '✗ 사용자 ID를 입력하세요',
     regFailed: '✗ 등록 실패 — 입력을 확인하세요',
     sendError: '✗ 전송 오류 — 다시 시도하세요',
     authSuccess: '✓ 인증 성공',
@@ -139,12 +134,11 @@ const I18N = {
     connecting: 'Connecting to the server...',
     statusLive: '● LIVE · synced with PC',
     labelUserId: 'User ID',
-    labelPassword: 'Password (4 digits)',
     btnClear: '↺ Clear',
     btnSubmit: 'Submit',
     btnReshuffle: '🎲 Reshuffle VNK (new π)',
     promptEnter: 'Enter your password.',
-    needInput: '✗ Enter your user ID and a 4-digit password',
+    needInput: '✗ Enter your user ID',
     regFailed: '✗ Registration failed — please check your input',
     sendError: '✗ Transmission error — please try again',
     authSuccess: '✓ Authentication successful',
@@ -191,7 +185,6 @@ function redrawTexts() {
   set('clearBtn', 'btnClear'); set('submitBtn', 'btnSubmit'); set('reshuffleBtn', 'btnReshuffle');
   const lbls = document.querySelectorAll('.reg-box .reg-lbl');
   if (lbls[0]) lbls[0].textContent = t('labelUserId');
-  if (lbls[1]) lbls[1].textContent = t('labelPassword');
   if (lastResult) showResult(lastResult.success, null, lastResult.reasonCode);
   else showPrompt();
 }
@@ -233,12 +226,6 @@ function renderPadA() {
     <div class="reg-box">
       <label class="reg-lbl">${t('labelUserId')}</label>
       <input type="text" id="userIdInput" value="demo-user" autocomplete="off">
-      <label class="reg-lbl">${t('labelPassword')}</label>
-      <div class="pw-wrap">
-        <input type="text" id="passwordInput" inputmode="numeric" autocomplete="off"
-               autocorrect="off" autocapitalize="off" spellcheck="false">
-        <div class="pw-dots" id="pwDots"></div>
-      </div>
     </div>
     <div id="hlArea"></div>
     <div class="progress" id="progress"></div>
@@ -251,11 +238,6 @@ function renderPadA() {
     <button class="btn btn-reshuffle" id="reshuffleBtn">${t('btnReshuffle')}</button>
     <div id="resultBanner"></div>`;
   document.getElementById('content').innerHTML = html;
-
-  // 비밀번호: 실제 숫자는 pwDigits에만 보관하고 화면에는 즉시 ●로 치환(입력 순간 노출 방지)
-  pwDigits = [];
-  document.getElementById('passwordInput').addEventListener('input', onPasswordInput);
-  renderPwDots();
 
   // 진행 점
   const prog = document.getElementById('progress');
@@ -316,33 +298,6 @@ function applyHighlight() {
   if (posList) posList.innerHTML = '';
 }
 
-// 비밀번호 입력: 실제 숫자는 pwDigits에만 저장하고, 화면 값은 곧바로 ●로 치환
-function onPasswordInput(e) {
-  const el = e.target;
-  const v = el.value;
-  const typed = v.split('').filter(ch => ch !== MASK_CHAR);
-  const keptMasks = v.length - typed.length;
-  if (keptMasks < pwDigits.length) pwDigits = pwDigits.slice(0, keptMasks); // 지우기
-  for (const ch of typed) {
-    if (/[0-9]/.test(ch) && pwDigits.length < pwLen) pwDigits.push(ch);
-  }
-  el.value = MASK_CHAR.repeat(pwDigits.length);
-  password = pwDigits.join('');
-  renderPwDots();
-}
-
-// 비밀번호 자릿수 표시 — 진행 점과 동일한 .dot 요소 사용
-function renderPwDots() {
-  const host = document.getElementById('pwDots');
-  if (!host) return;
-  host.innerHTML = '';
-  for (let i = 0; i < pwLen; i++) {
-    const d = document.createElement('div');
-    d.className = 'dot' + (i < pwDigits.length ? ' filled' : '');
-    host.appendChild(d);
-  }
-}
-
 function handleCellClick(idx, el) {
   if (locked || userInput.length >= pwLen) return;
   cancelScheduledReset();   // 새 입력 시작 → 이전 결과의 초기화 예약 취소
@@ -397,7 +352,7 @@ function resetInput() {
 }
 
 function getPassword() {
-  return pwDigits.join('');
+  return FIXED_PASSWORD;   // 고정 비밀번호
 }
 function getUserId() {
   const el = document.getElementById('userIdInput');
@@ -408,7 +363,7 @@ async function submitAuth() {
   if (userInput.length !== pwLen) return;
   const userId = getUserId();
   const pw = getPassword();
-  if (!userId || !/^\d{4}$/.test(pw)) {
+  if (!userId) {
     const b = document.getElementById('resultBanner');
     if (b) b.innerHTML = '<div class="result-banner failure">' + t('needInput') + '</div>';
     return;
