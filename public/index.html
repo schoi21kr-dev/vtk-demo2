@@ -42,8 +42,8 @@
   .btn:disabled { opacity: .5; cursor: default; }
   .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
   .qr-section { text-align: center; }
-  .qr-box { background: #fff; padding: 22px; border: 2px solid var(--border); border-radius: 14px; display: inline-block; margin: 8px 0; min-height: 300px; min-width: 300px; }
-  .qr-box img { max-width: 100%; height: auto; }
+  .qr-box { background: #fff; padding: 20px; border: 2px solid var(--border); border-radius: 14px; display: block; width: fit-content; max-width: 100%; margin: 8px auto; box-sizing: border-box; }
+  .qr-box img { display: block; max-width: 100%; width: auto; height: auto; margin: 0 auto; }
   .qr-wait { color: var(--text-muted); padding: 80px 20px; }
   .alt-url { display: none; background: var(--ice); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-top: 10px; font-family: 'Consolas', monospace; font-size: 11px; color: var(--text-muted); word-break: break-all; text-align: left; }
   /* 등록 및 인증 순서 안내 */
@@ -69,6 +69,35 @@
   .log-line.system { color: #C4B5FD; }
   .log-line.warning { color: #FCD34D; }
   @media (max-width: 720px) { .main-grid { grid-template-columns: 1fr; } }
+  /* 휴대폰 세로: 헤더·여백 축소 */
+  @media (max-width: 600px) {
+    body { padding: 10px; }
+    .header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px 16px; }
+    .header h1 { font-size: 16px; }
+    .header-right { width: 100%; justify-content: space-between; gap: 8px; }
+    .header .badge { font-size: 11px; padding: 5px 10px; letter-spacing: 1px; }
+    .panel { padding: 16px; }
+    .panel h2 { font-size: 16px; }
+    .qr-box { padding: 12px; }
+    .pad-b { max-width: 280px; }
+    .b-cell { font-size: 24px; }
+    .meta { font-size: 11px; }
+  }
+  /* 휴대폰 가로(낮은 높이): 세로 공간 확보 + QR·VNK 키패드 높이 제한 */
+  @media (max-height: 520px) {
+    body { padding: 8px; }
+    .header { padding: 6px 14px; margin-bottom: 8px; }
+    .header h1 { font-size: 15px; }
+    .meta { padding: 4px 12px; margin-bottom: 6px; }
+    .panel { padding: 10px; }
+    .panel h2 { margin-bottom: 6px; padding-bottom: 6px; font-size: 15px; }
+    .qr-box { margin: 4px auto; padding: 8px; }
+    .qr-box img { max-height: 58vh; }
+    .pad-note { display: none; }
+    .pad-b { max-width: 42vh; gap: 6px; }
+    .b-cell { font-size: 15px; }
+    #resultBanner .result-banner { padding: 8px 12px; font-size: 13px; }
+  }
 </style>
 </head>
 <body>

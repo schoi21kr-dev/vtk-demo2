@@ -380,16 +380,17 @@ function handleCellClick(idx, el) {
 function fitToScreen() {
   const f = document.querySelector('.phone-frame');
   if (!f) return;
-  const avail = window.innerHeight - 22;
+  const avail = window.innerHeight - 24;
   let z = 0.9;
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 7; i++) {
     f.style.zoom = String(Math.round(z * 1000) / 1000);
     const h = f.getBoundingClientRect().height;
     if (h <= avail) break;
-    z = Math.max(0.62, z * (avail / h) * 0.99);
+    z = Math.max(0.4, z * (avail / h) * 0.98);
   }
 }
 window.addEventListener('resize', fitToScreen);
+window.addEventListener('orientationchange', () => setTimeout(fitToScreen, 250));
 
 function updateProgress() {
   document.querySelectorAll('.progress .dot').forEach((d, i) => d.classList.toggle('filled', i < userInput.length));
