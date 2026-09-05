@@ -184,6 +184,13 @@ app.post('/auth/reshuffle', (req, res) => {
 io.on('connection', (socket) => {
   socket.on('join-pc', ({ sid }) => { socket.join(`pc-${sid}`); console.log(`[Socket] PC joined ${sid}`); });
   socket.on('join-mobile', ({ sid }) => { socket.join(`mobile-${sid}`); console.log(`[Socket] Mobile joined ${sid}`); });
+  // 휴대폰 '새 세션(QR 재발급)' 요청 → 해당 세션의 PC에 재발급 신호
+  socket.on('request-new-session', ({ sid }) => {
+    if (sid) {
+      io.to(`pc-${sid}`).emit('renew-session');
+      console.log(`[Socket] 휴대폰 새 세션 요청 → PC(${sid})에 renew-session`);
+    }
+  });
 });
 
 setInterval(() => {

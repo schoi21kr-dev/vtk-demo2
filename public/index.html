@@ -370,6 +370,16 @@ socket.on('auth-result', ({ success }) => {
   log('logResult', success ? 'success' : 'warning', success ? t('resultOkWord') : t('resultNgWord'));
 });
 
+// 휴대폰 '새 세션(QR 재발급)' 요청 → PC를 1단계(QR)로 되돌리고 새 세션·QR 발급
+socket.on('renew-session', () => {
+  stage2Shown = false;
+  lastAuthSuccess = null;
+  document.getElementById('stage2').style.display = 'none';
+  document.getElementById('stage1').style.display = 'block';
+  const rb = document.getElementById('resultBanner'); if (rb) rb.innerHTML = '';
+  startSession();
+});
+
 document.getElementById('langKo').onclick = () => setLanguage('ko');
 document.getElementById('langEn').onclick = () => setLanguage('en');
 

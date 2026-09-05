@@ -47,6 +47,8 @@
   .btn-reshuffle { width: 100%; margin-top: 8px; padding: 11px; border: 1px solid rgba(212,165,116,0.4); border-radius: 10px; background: rgba(212,165,116,0.15); color: var(--amber-bright); font-size: 14px; font-weight: bold; cursor: pointer; font-family: inherit; }
   .btn-reshuffle:active { transform: scale(.98); }
   .btn-reshuffle:disabled { opacity: 0.5; cursor: default; }
+  .session-row { display: flex; gap: 8px; margin-top: 8px; }
+  .session-row .btn-reshuffle { flex: 1; width: auto; margin-top: 0; }
   .result-banner { margin-top: 10px; padding: 11px 16px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 14px; }
   .result-banner.success { background: var(--green-bg); color: var(--green); }
   .result-banner.failure { background: var(--red-bg); color: var(--red); }
@@ -124,7 +126,9 @@ const I18N = {
     labelUserId: '사용자 ID',
     btnClear: '↺ 다시 입력',
     btnSubmit: '인증 제출',
-    btnReshuffle: '🎲 VNK 재배치 (새 π 생성)',
+    btnReshuffle: '🎲 VNK 재배치',
+    btnNewSession: '🔄 새 세션 (QR 재발급)',
+    newSessionAsked: '🔄 PC에 새 QR이 발급되었습니다 — 새 QR을 다시 스캔하세요',
     pwChangeLink: '⚙ 비밀번호 변경',
     pwChangePlaceholder: '새 비밀번호 4자리',
     pwChangeApply: '적용',
@@ -154,7 +158,9 @@ const I18N = {
     labelUserId: 'User ID',
     btnClear: '↺ Clear',
     btnSubmit: 'Submit',
-    btnReshuffle: '🎲 Reshuffle VNK (new π)',
+    btnReshuffle: '🎲 Reshuffle VNK',
+    btnNewSession: '🔄 New session (reissue QR)',
+    newSessionAsked: '🔄 A new QR has been issued on the PC — scan the new QR again',
     pwChangeLink: '⚙ Change password',
     pwChangePlaceholder: 'New 4-digit password',
     pwChangeApply: 'Apply',
@@ -205,7 +211,7 @@ function applyLanguage() {
 function redrawTexts() {
   const set = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = t(key); };
   const dh = document.getElementById('demoHint'); if (dh) dh.innerHTML = t('demoHint');
-  set('clearBtn', 'btnClear'); set('submitBtn', 'btnSubmit'); set('reshuffleBtn', 'btnReshuffle');
+  set('clearBtn', 'btnClear'); set('submitBtn', 'btnSubmit'); set('reshuffleBtn', 'btnReshuffle'); set('newSessionBtn', 'btnNewSession');
   set('pwToggle', 'pwChangeLink'); set('pwApply', 'pwChangeApply');
   const pwNew = document.getElementById('pwNew'); if (pwNew) pwNew.placeholder = t('pwChangePlaceholder');
   const lbls = document.querySelectorAll('.reg-box .reg-lbl');
@@ -249,10 +255,6 @@ function showError(title, msg) {
 function renderPadA() {
   let html = `
     <div class="demo-hint" id="demoHint">${t('demoHint')}</div>
-    <div class="reg-box">
-      <label class="reg-lbl">${t('labelUserId')}</label>
-      <input type="text" id="userIdInput" value="demo-user" autocomplete="off">
-    </div>
     <div id="hlArea"></div>
     <div class="progress" id="progress"></div>
     <div class="pad-a" id="padA"></div>
@@ -261,7 +263,10 @@ function renderPadA() {
       <button class="btn btn-secondary" id="clearBtn">${t('btnClear')}</button>
       <button class="btn btn-primary" id="submitBtn" disabled>${t('btnSubmit')}</button>
     </div>
-    <button class="btn btn-reshuffle" id="reshuffleBtn">${t('btnReshuffle')}</button>
+    <div class="session-row">
+      <button class="btn btn-reshuffle" id="reshuffleBtn">${t('btnReshuffle')}</button>
+      <button class="btn btn-reshuffle" id="newSessionBtn">${t('btnNewSession')}</button>
+    </div>
     <div id="resultBanner"></div>
     <div class="pw-change" id="pwChange" style="display:none;">
       <a href="#" id="pwToggle" class="pw-toggle">${t('pwChangeLink')}</a>
@@ -295,6 +300,7 @@ function renderPadA() {
   document.getElementById('clearBtn').onclick = resetInput;
   document.getElementById('submitBtn').onclick = submitAuth;
   document.getElementById('reshuffleBtn').onclick = reshuffle;
+  document.getElementById('newSessionBtn').onclick = phoneNewSession;
 
   // 비밀번호 변경 UI (이번 세션에만 적용, 저장하지 않음)
   document.getElementById('pwToggle').onclick = (e) => {
@@ -338,6 +344,13 @@ function applyPasswordChange() {
 }
 
 // 숫자판 재배치: 현재 세션의 π만 새로 생성(세션·QR 유지). PC 숫자판 B가 갱신됨.
+// 휴대폰 '새 세션(QR 재발급)' 요청 → 서버가 PC에 renew-session 전달 → PC가 새 QR 발급
+function phoneNewSession() {
+  socket.emit('request-new-session', { sid });
+  const b = document.getElementById('resultBanner');
+  if (b) b.innerHTML = '<div class="result-banner prompt">' + t('newSessionAsked') + '</div>';
+}
+
 async function reshuffle() {
   const btn = document.getElementById('reshuffleBtn');
   btn.disabled = true;
@@ -430,7 +443,7 @@ function getPassword() {
 }
 function getUserId() {
   const el = document.getElementById('userIdInput');
-  return el ? el.value.trim() : '';
+  return el ? el.value.trim() : 'demo-user';   // 사용자 ID 입력창 제거 → 기본값 사용
 }
 
 async function submitAuth() {
