@@ -40,7 +40,7 @@
   .btn-navy { background: var(--navy); color: #fff; }
   .btn-block { width: 100%; margin-top: 16px; }
   .btn:disabled { opacity: .5; cursor: default; }
-  .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start; }
   .qr-section { text-align: center; }
   .qr-box { background: #fff; padding: 20px; border: 2px solid var(--border); border-radius: 14px; display: block; width: fit-content; max-width: 100%; margin: 8px auto; box-sizing: border-box; }
   .qr-box img { display: block; max-width: 100%; width: auto; height: auto; margin: 0 auto; }
@@ -114,24 +114,26 @@
   </div>
   <div class="meta" id="metaBar"><b>SESSION:</b> <span id="sessionText">—</span>&nbsp;&nbsp;&nbsp;<b>USER:</b> <span id="userText">—</span></div>
 
-  <!-- ===== 1단계: QR 스캔 (휴대폰 페어링 대기) ===== -->
-  <div id="stage1">
-    <div class="panel qr-panel">
-      <h2 data-i18n="qrHeading">&#9312; 휴대폰으로 QR 코드 스캔</h2>
-      <div class="qr-box" id="qrBox"><div class="qr-wait" data-i18n="qrLoading">QR 코드 로딩 중…</div></div>
+  <!-- QR 스캔 + VNK 표시를 한 화면에 나란히 (좌: QR, 우: 키패드) -->
+  <div class="main-grid">
+    <!-- QR 스캔 (스캔 후에도 계속 표시) -->
+    <div id="stage1">
+      <div class="panel qr-panel">
+        <h2 data-i18n="qrHeading">&#9312; 휴대폰으로 QR 코드 스캔</h2>
+        <div class="qr-box" id="qrBox"><div class="qr-wait" data-i18n="qrLoading">QR 코드 로딩 중…</div></div>
+      </div>
     </div>
-  </div>
 
-  <!-- ===== 2단계: 인증 (페어링 완료 시 자동 표시) ===== -->
-  <div id="stage2" style="display:none;">
-
-    <div class="panel">
-      <h2 data-i18n="padBHeading">&#9313; VNK &middot; 숫자표시 (PC)</h2>
-      <div id="padArea"><div class="pad-wait" data-i18n-html="padWait">인증 세션을 시작하면<br>VNK가 표시됩니다.</div></div>
+    <!-- VNK 숫자표시 -->
+    <div id="stage2">
+      <div class="panel">
+        <h2 data-i18n="padBHeading">&#9313; VNK &middot; 숫자표시 (PC)</h2>
+        <div id="padArea"><div class="pad-wait" data-i18n-html="padWait">인증 세션을 시작하면<br>VNK가 표시됩니다.</div></div>
+      </div>
+      <div id="resultBanner" style="margin-top:16px;"></div>
+      <!-- 로그(logBox)는 화면에서 제거됨. JS 오류 방지용 숨김 노드만 유지 -->
+      <div id="logBox" style="display:none;"></div>
     </div>
-    <div id="resultBanner" style="margin-top:16px;"></div>
-    <!-- 로그(logBox)는 화면에서 제거됨. JS 오류 방지용 숨김 노드만 유지 -->
-    <div id="logBox" style="display:none;"></div>
   </div>
 </div>
 
@@ -276,11 +278,11 @@ function renderResultBanner() {
 }
 
 // 휴대폰 페어링 완료 시 1단계 → 2단계 자동 전환
+// 결합 화면: QR과 키패드를 항상 함께 표시 (전환하지 않음)
 function showStage2() {
-  if (stage2Shown) return;
   stage2Shown = true;
-  document.getElementById('stage1').style.display = 'none';
-  document.getElementById('stage2').style.display = 'block';
+  document.getElementById('stage1').style.display = '';
+  document.getElementById('stage2').style.display = '';
 }
 
 // 화면 로드 시 세션(π·QR) 자동 생성 → QR 즉시 표시
@@ -374,8 +376,9 @@ socket.on('auth-result', ({ success }) => {
 socket.on('renew-session', () => {
   stage2Shown = false;
   lastAuthSuccess = null;
-  document.getElementById('stage2').style.display = 'none';
-  document.getElementById('stage1').style.display = 'block';
+  // 결합 화면: 두 영역 모두 계속 표시, 새 세션·QR만 재발급
+  document.getElementById('stage1').style.display = '';
+  document.getElementById('stage2').style.display = '';
   const rb = document.getElementById('resultBanner'); if (rb) rb.innerHTML = '';
   startSession();
 });
