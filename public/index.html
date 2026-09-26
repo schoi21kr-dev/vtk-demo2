@@ -113,7 +113,6 @@
       <div class="lang-switch"><button id="langKo" class="on">KO</button><button id="langEn">EN</button></div>
     </div>
   </div>
-  <div class="meta" id="metaBar"><b>SESSION:</b> <span id="sessionText">—</span>&nbsp;&nbsp;&nbsp;<b>USER:</b> <span id="userText">—</span></div>
 
   <!-- 스캔 전: QR 코드 창만 표시 / 스캔 후: 좌 QR · 우 VNK 나란히 -->
   <div class="main-grid qr-only" id="mainGrid">
@@ -299,8 +298,6 @@ async function startSession() {
     if (!res.ok) { log('logSessionFail', 'warning', (data.error || '')); return; }
 
     currentSid = data.sid;
-    document.getElementById('sessionText').textContent = currentSid;
-    document.getElementById('userText').textContent = t('userPending');
 
     log('logSessionHead', 'info');
     log('logSessionId', 'system', currentSid);
@@ -362,7 +359,6 @@ socket.on('mobile-paired', () => {
 // 휴대폰에서 등록이 완료되면 사용자 ID 표시 갱신
 socket.on('user-registered', ({ userId }) => {
   registeredUserId = userId;
-  document.getElementById('userText').textContent = userId;
   log('logRegistered', 'success');
 });
 
