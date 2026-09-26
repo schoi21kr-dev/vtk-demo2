@@ -144,13 +144,9 @@ const socket = io();
 let currentSid = null;
 let sessionUserId = null;
 let stage2Shown = false;
-<<<<<<< HEAD
 const NUMERIC_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10]; // 9·11은 빈 셀
 const STD_PI = [9, 0, 1, 2, 3, 4, 5, 6, 7, 8]; // 일반 순서 키패드(1·2·3/4·5·6/7·8·9/0)
 let currentPi = null;   // 서버가 발급한 실제 π (스캔 시 VTK 배치로 전환)
-=======
-const NUMERIC_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10]; const STD_PI = [9,0,1,2,3,4,5,6,7,8]; let currentPi = null; // 9·11은 빈 셀
->>>>>>> 99976c38ccd27249cd2b9685b91c4b75d3bfba18
 
 
 // ─────────── 다국어 사전 (화면 문구는 모두 여기서 관리) ───────────
@@ -317,12 +313,8 @@ async function startSession() {
     currentMobileUrl = data.mobileUrl;
     renderQr(currentMobileUrl);
 
-<<<<<<< HEAD
     currentPi = data.pi;             // 실제 π는 보관만 (스캔 전에는 사용하지 않음)
     renderPadB(STD_PI);              // 스캔 전: 일반 순서 키패드 표시
-=======
-    currentPi = data.pi; renderPadB(STD_PI);
->>>>>>> 99976c38ccd27249cd2b9685b91c4b75d3bfba18
   } catch (err) {
     log('logSessionError', 'warning', err.message);
   }
@@ -338,14 +330,9 @@ function renderQr(mobileUrl) {
   const qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=' + qrSize + 'x' + qrSize +
     '&data=' + encodeURIComponent(shown) + '&color=1E2761&bgcolor=ffffff&margin=8';
   const img = new Image();
-<<<<<<< HEAD
   img.width = qrDisplay; img.height = qrDisplay; img.alt = 'QR';
   // 인라인 width/height로 표시 크기를 VNK(320px)에 고정 (.qr-box img의 width:auto 를 덮어씀)
   img.style.cssText = 'display:block;border-radius:8px;width:' + qrDisplay + 'px;height:' + qrDisplay + 'px;max-width:100%;';
-=======
-  img.width = qrSize; img.height = qrSize; img.alt = 'QR';
-  img.style.cssText = 'display:block;border-radius:8px;width:380px;height:380px;max-width:100%;';
->>>>>>> 99976c38ccd27249cd2b9685b91c4b75d3bfba18
   img.onerror = () => { document.getElementById('qrBox').innerHTML = '<div class="qr-wait">' + t('qrFailed') + '</div>'; };
   img.src = qrApiUrl;
   const box = document.getElementById('qrBox');
@@ -369,12 +356,8 @@ function renderPadB(pi) {
 socket.on('mobile-paired', () => {
   log('logPaired', 'success');
   log('logChannel2', 'info');
-<<<<<<< HEAD
   showStage2();
   if (currentPi) renderPadB(currentPi);   // QR 스캔됨 → VTK(π 무작위 배치) 작동
-=======
-  showStage2(); if (currentPi) renderPadB(currentPi);
->>>>>>> 99976c38ccd27249cd2b9685b91c4b75d3bfba18
 });
 
 // 휴대폰에서 등록이 완료되면 사용자 ID 표시 갱신
