@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VTK 멀티디바이스 시연 · PC · 데모 2</title>
+<title>VTK 데모 2</title>
 <style>
   :root {
     --navy: #1E2761; --navy-dark: #0F1838;
@@ -41,6 +41,8 @@
   .btn-block { width: 100%; margin-top: 16px; }
   .btn:disabled { opacity: .5; cursor: default; }
   .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start; }
+  /* 스캔 전: QR 코드 창만 가운데 표시 (VNK 창은 스캔 후 표시) */
+  .main-grid.qr-only { grid-template-columns: 1fr; max-width: 480px; margin-left: auto; margin-right: auto; }
   .qr-section { text-align: center; }
   .qr-box { background: #fff; padding: 20px; border: 2px solid var(--border); border-radius: 14px; display: block; width: fit-content; max-width: 100%; margin: 8px auto; box-sizing: border-box; }
   .qr-box img { display: block; max-width: 100%; width: auto; height: auto; margin: 0 auto; }
@@ -106,16 +108,15 @@
 <body>
 <div class="container">
   <div class="header">
-    <h1 data-i18n="appTitle">VTK 멀티디바이스 시연 · PC (Live) · 데모 2</h1>
+    <h1 data-i18n="appTitle">VTK 데모 2</h1>
     <div class="header-right">
       <div class="lang-switch"><button id="langKo" class="on">KO</button><button id="langEn">EN</button></div>
-      <span class="badge">LEVEL 3 · HIGH ASSURANCE</span>
     </div>
   </div>
   <div class="meta" id="metaBar"><b>SESSION:</b> <span id="sessionText">—</span>&nbsp;&nbsp;&nbsp;<b>USER:</b> <span id="userText">—</span></div>
 
-  <!-- QR 스캔 + VNK 표시를 한 화면에 나란히 (좌: QR, 우: 키패드) -->
-  <div class="main-grid">
+  <!-- 스캔 전: QR 코드 창만 표시 / 스캔 후: 좌 QR · 우 VNK 나란히 -->
+  <div class="main-grid qr-only" id="mainGrid">
     <!-- QR 스캔 (스캔 후에도 계속 표시) -->
     <div id="stage1">
       <div class="panel qr-panel">
@@ -124,8 +125,8 @@
       </div>
     </div>
 
-    <!-- VNK 숫자표시 -->
-    <div id="stage2">
+    <!-- VNK 숫자표시 (스캔 후 표시) -->
+    <div id="stage2" style="display:none;">
       <div class="panel">
         <h2 data-i18n="padBHeading">&#9313; VNK &middot; 숫자표시 (PC)</h2>
         <div id="padArea"><div class="pad-wait" data-i18n-html="padWait">인증 세션을 시작하면<br>VNK가 표시됩니다.</div></div>
@@ -144,12 +145,14 @@ let currentSid = null;
 let sessionUserId = null;
 let stage2Shown = false;
 const NUMERIC_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10]; // 9·11은 빈 셀
+const STD_PI = [9, 0, 1, 2, 3, 4, 5, 6, 7, 8]; // 일반 순서 키패드(1·2·3/4·5·6/7·8·9/0)
+let currentPi = null;   // 서버가 발급한 실제 π (스캔 시 VTK 배치로 전환)
 
 
 // ─────────── 다국어 사전 (화면 문구는 모두 여기서 관리) ───────────
 const I18N = {
   ko: {
-    appTitle: 'VTK 멀티디바이스 시연 · PC (Live) · 데모 2',
+    appTitle: 'VTK 데모 2',
     stage1Title: '1단계',
     qrHeading: '\u2460 휴대폰으로 QR 코드 스캔',
     qrLoading: 'QR 코드 로딩 중…',
@@ -180,7 +183,7 @@ const I18N = {
     locale: 'ko-KR'
   },
   en: {
-    appTitle: 'VTK Multi-Device Demonstration · PC (Live) · Demo 2',
+    appTitle: 'VTK Demo 2',
     stage1Title: 'Step 1',
     qrHeading: '\u2460 Scan the QR Code with Your Phone',
     qrLoading: 'Loading QR code…',
@@ -277,10 +280,10 @@ function renderResultBanner() {
     : '<div class="result-banner failure">' + t('bannerFailure') + '</div>';
 }
 
-// 휴대폰 페어링 완료 시 1단계 → 2단계 자동 전환
-// 결합 화면: QR과 키패드를 항상 함께 표시 (전환하지 않음)
+// 휴대폰 페어링 완료(스캔) 시 VNK 창 표시 → QR 옆에 나란히
 function showStage2() {
   stage2Shown = true;
+  document.getElementById('mainGrid').classList.remove('qr-only');
   document.getElementById('stage1').style.display = '';
   document.getElementById('stage2').style.display = '';
 }
@@ -310,7 +313,8 @@ async function startSession() {
     currentMobileUrl = data.mobileUrl;
     renderQr(currentMobileUrl);
 
-    renderPadB(data.pi);
+    currentPi = data.pi;             // 실제 π는 보관만 (스캔 전에는 사용하지 않음)
+    renderPadB(STD_PI);              // 스캔 전: 일반 순서 키패드 표시
   } catch (err) {
     log('logSessionError', 'warning', err.message);
   }
@@ -321,12 +325,14 @@ function renderQr(mobileUrl) {
   const url = new URL(mobileUrl);
   url.searchParams.set('lang', LANG);
   const shown = url.toString();
-  const qrSize = 480;
+  const qrSize = 480;          // 요청 해상도(선명도 유지용)
+  const qrDisplay = 380;       // 표시 크기 — VNK 키패드 패널 높이에 맞춤
   const qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=' + qrSize + 'x' + qrSize +
     '&data=' + encodeURIComponent(shown) + '&color=1E2761&bgcolor=ffffff&margin=8';
   const img = new Image();
-  img.width = qrSize; img.height = qrSize; img.alt = 'QR';
-  img.style.cssText = 'display:block;border-radius:8px;';
+  img.width = qrDisplay; img.height = qrDisplay; img.alt = 'QR';
+  // 인라인 width/height로 표시 크기를 VNK(320px)에 고정 (.qr-box img의 width:auto 를 덮어씀)
+  img.style.cssText = 'display:block;border-radius:8px;width:' + qrDisplay + 'px;height:' + qrDisplay + 'px;max-width:100%;';
   img.onerror = () => { document.getElementById('qrBox').innerHTML = '<div class="qr-wait">' + t('qrFailed') + '</div>'; };
   img.src = qrApiUrl;
   const box = document.getElementById('qrBox');
@@ -351,6 +357,7 @@ socket.on('mobile-paired', () => {
   log('logPaired', 'success');
   log('logChannel2', 'info');
   showStage2();
+  if (currentPi) renderPadB(currentPi);   // QR 스캔됨 → VTK(π 무작위 배치) 작동
 });
 
 // 휴대폰에서 등록이 완료되면 사용자 ID 표시 갱신
@@ -376,9 +383,10 @@ socket.on('auth-result', ({ success }) => {
 socket.on('renew-session', () => {
   stage2Shown = false;
   lastAuthSuccess = null;
-  // 결합 화면: 두 영역 모두 계속 표시, 새 세션·QR만 재발급
+  // 새 세션·QR 재발급 → 스캔 전 상태(QR 창만)로 되돌림
+  document.getElementById('mainGrid').classList.add('qr-only');
   document.getElementById('stage1').style.display = '';
-  document.getElementById('stage2').style.display = '';
+  document.getElementById('stage2').style.display = 'none';
   const rb = document.getElementById('resultBanner'); if (rb) rb.innerHTML = '';
   startSession();
 });
