@@ -89,6 +89,11 @@ app.post('/auth/start', (req, res) => {
   });
 });
 
+// 세션이 아직 서버에 존재하는지 확인 (PC 재연결 시 QR 재발급 판단용)
+app.get('/api/session-exists/:sid', (req, res) => {
+  res.json({ exists: sessions.has(req.params.sid) });
+});
+
 // 휴대폰(VIK) 페어링
 // 무표시 입력 패드가 기본이나, 발표자 보조용 "위치 강조"를 휴대폰에서 계산할 수 있도록
 // π와 비밀번호(위치 산출용)를 함께 전달한다.
@@ -182,7 +187,7 @@ app.post('/auth/reshuffle', (req, res) => {
 });
 
 io.on('connection', (socket) => {
-  socket.on('join-pc', ({ sid }) => { socket.join(`pc-${sid}`); console.log(`[Socket] PC joined ${sid}`); });
+  socket.on('join-pc', ({ sid }) => { socket.join(`pc-${sid}`); if (sid && sessions.has(sid)) sessions.get(sid).createdAt = Date.now(); console.log(`[Socket] PC joined ${sid}`); });
   socket.on('join-mobile', ({ sid }) => { socket.join(`mobile-${sid}`); console.log(`[Socket] Mobile joined ${sid}`); });
   // 휴대폰 '새 세션(QR 재발급)' 요청 → 해당 세션의 PC에 재발급 신호
   socket.on('request-new-session', ({ sid }) => {
@@ -191,12 +196,16 @@ io.on('connection', (socket) => {
       console.log(`[Socket] 휴대폰 새 세션 요청 → PC(${sid})에 renew-session`);
     }
   });
+  // PC 세션 keepalive → 열려 있는 세션이 만료되지 않도록 createdAt 갱신
+  socket.on('session-keepalive', ({ sid }) => {
+    if (sid && sessions.has(sid)) sessions.get(sid).createdAt = Date.now();
+  });
 });
 
 setInterval(() => {
   const now = Date.now();
   for (const [sid, session] of sessions.entries()) {
-    if (now - session.createdAt > 30 * 60 * 1000) {
+    if (now - session.createdAt > 12 * 60 * 60 * 1000) {
       sessions.delete(sid);
       console.log(`[Cleanup] 세션 만료: ${sid}`);
     }
