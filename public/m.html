@@ -81,7 +81,6 @@
 <div class="phone-frame">
   <div class="header">
     <div class="lang-switch"><button id="langKo" class="on">KO</button><button id="langEn">EN</button></div>
-    <div class="badge" id="statusBadge">CONNECTING...</div>
   </div>
   <div id="content">
     <div class="loading"><div class="spinner"></div><p data-i18n="connecting">서버에 연결 중...</p></div>
@@ -242,8 +241,6 @@ async function init() {
     pi = data.pi || null;
     password = (data.password != null) ? String(data.password) : null;
     socket.emit('join-mobile', { sid });
-    document.getElementById('statusBadge').className = 'badge live';
-    document.getElementById('statusBadge').textContent = t('statusLive');
     renderPadA();
   } catch (err) { showError(t('errConn'), err.message); }
 }
