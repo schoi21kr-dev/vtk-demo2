@@ -507,8 +507,10 @@ socket.on('auth-result', ({ success }) => { if (locked) showResult(success); });
 // 인증 성공 후 서버가 자동 재배치한 새 π를 반영(휴대폰 패드는 무표시이므로 내부 상태만 갱신)
 socket.on('pi-updated', ({ pi: newPi }) => { if (newPi) pi = newPi; });
 
-document.getElementById('langKo').onclick = () => setLanguage('ko');
-document.getElementById('langEn').onclick = () => setLanguage('en');
+// KO/EN은 같은 세션의 PC·휴대폰 양쪽을 동시에 전환 (버튼 누른 쪽 언어로 동기화)
+socket.on('set-lang', ({ lang }) => setLanguage(lang));
+document.getElementById('langKo').onclick = () => { setLanguage('ko'); socket.emit('set-lang', { sid: sid, lang: 'ko' }); };
+document.getElementById('langEn').onclick = () => { setLanguage('en'); socket.emit('set-lang', { sid: sid, lang: 'en' }); };
 applyLanguage();
 init();
 </script>
