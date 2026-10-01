@@ -284,10 +284,21 @@ function showStage2() {
   stage2Shown = true;
   document.getElementById('stage1').style.display = 'none';   // QR 창 제거
   document.getElementById('stage2').style.display = '';
+  startIdleReset();                        // 스캔 후 1분간 휴대폰 입력 없으면 새 세션으로 복귀
 }
+
+// QR 스캔 후 휴대폰(VIK)에서 입력이 없는 상태가 1분 지속되면 자동으로 새 세션(QR)으로 되돌림
+let idleResetTimer = null;
+const IDLE_RESET_MS = 60 * 1000;
+function startIdleReset() {
+  clearTimeout(idleResetTimer);
+  idleResetTimer = setTimeout(() => { renewToQr(); }, IDLE_RESET_MS);
+}
+function cancelIdleReset() { clearTimeout(idleResetTimer); idleResetTimer = null; }
 
 // 화면 로드 시 세션(π·QR) 자동 생성 → QR 즉시 표시
 async function startSession() {
+  cancelIdleReset();                 // 새 세션 시작 시 자동 복귀 타이머 해제
   sessionUserId = 'demo-user'; // 실제 ID·비밀번호는 휴대폰에서 입력·등록
   try {
     const res = await fetch('/auth/start', {
@@ -369,22 +380,27 @@ socket.on('pi-updated', ({ pi, auto }) => {
 });
 
 socket.on('auth-result', ({ success }) => {
+  cancelIdleReset();                 // 입력·인증 발생 → 자동 복귀 타이머 해제
   lastAuthSuccess = success;
   renderResultBanner();
   log('logResult', success ? 'success' : 'warning', success ? t('resultOkWord') : t('resultNgWord'));
 });
 
-// 휴대폰 '새 세션(QR 재발급)' 요청 → PC를 1단계(QR)로 되돌리고 새 세션·QR 발급
-socket.on('renew-session', () => {
+// 휴대폰에서 첫 입력(VIK 터치)이 감지되면 자동 복귀 타이머 해제
+socket.on('mobile-input', () => { cancelIdleReset(); });
+
+// PC를 1단계(QR 창만)로 되돌리고 새 세션·QR 발급
+function renewToQr() {
   stage2Shown = false;
   lastAuthSuccess = null;
-  // 새 세션·QR 재발급 → 스캔 전 상태(QR 창만)로 되돌림
   document.getElementById('mainGrid').classList.add('qr-only');
   document.getElementById('stage1').style.display = '';
   document.getElementById('stage2').style.display = 'none';
   const rb = document.getElementById('resultBanner'); if (rb) rb.innerHTML = '';
   startSession();
-});
+}
+// 휴대폰 '새 세션(QR 재발급)' 요청 → 위와 동일하게 복귀
+socket.on('renew-session', () => { renewToQr(); });
 
 document.getElementById('langKo').onclick = () => setLanguage('ko');
 document.getElementById('langEn').onclick = () => setLanguage('en');

@@ -384,6 +384,7 @@ function applyHighlight() {
 function handleCellClick(idx, el) {
   if (locked || userInput.length >= pwLen) return;
   cancelScheduledReset();   // 새 입력 시작 → 이전 결과의 초기화 예약 취소
+  if (userInput.length === 0) socket.emit('mobile-input', { sid });  // 첫 입력 → PC 자동 복귀 타이머 해제
   userInput.push(idx);
   el.classList.add('clicked');
   setTimeout(() => el.classList.remove('clicked'), 160);

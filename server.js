@@ -200,6 +200,10 @@ io.on('connection', (socket) => {
   socket.on('session-keepalive', ({ sid }) => {
     if (sid && sessions.has(sid)) sessions.get(sid).createdAt = Date.now();
   });
+  // 휴대폰(VIK) 첫 입력 → 해당 세션의 PC에 전달 (PC 자동 복귀 타이머 해제용)
+  socket.on('mobile-input', ({ sid }) => {
+    if (sid) io.to(`pc-${sid}`).emit('mobile-input');
+  });
 });
 
 setInterval(() => {
