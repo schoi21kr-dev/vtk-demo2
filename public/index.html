@@ -383,14 +383,10 @@ socket.on('pi-updated', ({ pi, auto }) => {
 });
 
 socket.on('auth-result', ({ success }) => {
-  cancelIdleReset();                 // 입력·인증 발생 → 자동 복귀 타이머 해제
   lastAuthSuccess = success;
   renderResultBanner();
   log('logResult', success ? 'success' : 'warning', success ? t('resultOkWord') : t('resultNgWord'));
 });
-
-// 휴대폰에서 첫 입력(VIK 터치)이 감지되면 자동 복귀 타이머 해제
-socket.on('mobile-input', () => { cancelIdleReset(); });
 
 // PC를 1단계(QR 창만)로 되돌리고 새 세션·QR 발급
 function renewToQr() {
