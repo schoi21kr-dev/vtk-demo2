@@ -292,7 +292,10 @@ let idleResetTimer = null;
 const IDLE_RESET_MS = 60 * 1000;
 function startIdleReset() {
   clearTimeout(idleResetTimer);
-  idleResetTimer = setTimeout(() => { renewToQr(); }, IDLE_RESET_MS);
+  idleResetTimer = setTimeout(() => {
+    if (currentSid) socket.emit('session-expired', { sid: currentSid });  // 기존 휴대폰에 '재스캔' 안내
+    renewToQr();
+  }, IDLE_RESET_MS);
 }
 function cancelIdleReset() { clearTimeout(idleResetTimer); idleResetTimer = null; }
 

@@ -204,6 +204,10 @@ io.on('connection', (socket) => {
   socket.on('mobile-input', ({ sid }) => {
     if (sid) io.to(`pc-${sid}`).emit('mobile-input');
   });
+  // PC 자동 복귀(1분 무입력) → 기존 세션의 휴대폰에 '세션 종료, 재스캔' 안내 전달
+  socket.on('session-expired', ({ sid }) => {
+    if (sid) io.to(`mobile-${sid}`).emit('session-expired');
+  });
 });
 
 setInterval(() => {

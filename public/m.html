@@ -142,6 +142,8 @@ const I18N = {
     errNoSidMsg: 'PC 화면의 QR 코드를 다시 스캔하거나, URL에 ?s=세션ID 파라미터가 포함되어 있는지 확인하세요.',
     errPair: '페어링 실패',
     errPairMsg: '세션이 만료되었거나 존재하지 않습니다.',
+    expiredTitle: '세션이 종료되었습니다',
+    expiredMsg: '이 창을 닫고 QR 코드를 다시 스캔해 주세요.',
     errConn: '연결 오류',
     errReshuffle: '재배치 실패',
     errPrefix: '오류: ',
@@ -174,6 +176,8 @@ const I18N = {
     errNoSidMsg: 'Please scan the QR code on the PC screen again, or check that the URL contains the ?s=SESSION_ID parameter.',
     errPair: 'Pairing failed',
     errPairMsg: 'The session has expired or does not exist.',
+    expiredTitle: 'Session ended',
+    expiredMsg: 'Please close this window and scan the QR code again.',
     errConn: 'Connection error',
     errReshuffle: 'Reshuffle failed',
     errPrefix: 'Error: ',
@@ -494,6 +498,8 @@ function showResult(success, reason, reasonCode) {
 }
 
 // PC/서버에서 결과 통보가 와도 동일 처리 (중복 안전)
+// PC가 1분 무입력으로 새 세션으로 돌아가면 → 이 창에 '재스캔' 안내 표시
+socket.on('session-expired', () => { locked = true; showError(t('expiredTitle'), t('expiredMsg')); });
 socket.on('auth-result', ({ success }) => { if (locked) showResult(success); });
 
 // 인증 성공 후 서버가 자동 재배치한 새 π를 반영(휴대폰 패드는 무표시이므로 내부 상태만 갱신)
