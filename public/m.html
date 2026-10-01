@@ -95,6 +95,7 @@ function getSid() {
 }
 const sid = getSid();
 const socket = io();
+let expiredShown = false;                // 세션 종료 안내창 표시 여부
 let pwLen = 4;
 let userInput = [];
 let locked = false;
@@ -207,6 +208,7 @@ function applyLanguage() {
   if (ko && en) { ko.classList.toggle('on', LANG === 'ko'); en.classList.toggle('on', LANG === 'en'); }
   const badge = document.getElementById('statusBadge');
   if (badge && badge.classList.contains('live')) badge.textContent = t('statusLive');
+  if (expiredShown) { showError(t('expiredTitle'), t('expiredMsg')); return; }   // 안내창 상태: 언어만 바뀐 안내창 재표시
   if (document.getElementById('padA')) redrawTexts();
 }
 
@@ -499,7 +501,7 @@ function showResult(success, reason, reasonCode) {
 
 // PC/서버에서 결과 통보가 와도 동일 처리 (중복 안전)
 // PC가 1분 무입력으로 새 세션으로 돌아가면 → 이 창에 '재스캔' 안내 표시
-socket.on('session-expired', () => { locked = true; showError(t('expiredTitle'), t('expiredMsg')); });
+socket.on('session-expired', () => { locked = true; expiredShown = true; showError(t('expiredTitle'), t('expiredMsg')); });
 socket.on('auth-result', ({ success }) => { if (locked) showResult(success); });
 
 // 인증 성공 후 서버가 자동 재배치한 새 π를 반영(휴대폰 패드는 무표시이므로 내부 상태만 갱신)
