@@ -24,6 +24,9 @@
   .lang-switch button { padding: 5px 12px; border: 1px solid rgba(255,255,255,0.35); background: transparent; color: #fff; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; font-family: inherit; letter-spacing: 1px; }
   .lang-switch button.on { background: var(--amber); border-color: var(--amber); color: var(--navy); }
   .qr-panel { text-align: center; }
+  /* QR 1회용 만료 카운트다운 */
+  .qr-ttl { margin: 10px auto 2px; font-size: 14px; font-weight: bold; color: var(--amber-txt); background: rgba(212,165,116,.14); border: 1px solid rgba(212,165,116,.5); border-radius: 999px; padding: 6px 14px; display: inline-block; letter-spacing: .3px; }
+  .qr-ttl.ending { color: var(--red); background: var(--red-bg); border-color: rgba(153,27,27,.4); }
   .qr-panel .alt-url { display: none; max-width: 480px; margin: 14px auto 0; }
   .meta b { color: var(--navy); }
   .panel { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid var(--border); }
@@ -121,6 +124,7 @@
       <div class="panel qr-panel">
         <h2 data-i18n="qrHeading">&#9312; 휴대폰으로 QR 코드 스캔</h2>
         <div class="qr-box" id="qrBox"><div class="qr-wait" data-i18n="qrLoading">QR 코드 로딩 중…</div></div>
+        <div class="qr-ttl" id="qrTtl" style="display:none;"></div>
       </div>
     </div>
 
@@ -325,9 +329,34 @@ async function startSession() {
 
     currentPi = data.pi;             // 실제 π는 보관만 (스캔 전에는 사용하지 않음)
     renderPadB(STD_PI);              // 스캔 전: 일반 순서 키패드 표시
+    startQrCountdown(data.qrTtlMs);  // QR 1회용 만료 카운트다운 시작
   } catch (err) {
     log('logSessionError', 'warning', err.message);
   }
+}
+
+// ── QR 1회용 만료 카운트다운 (nonce+TTL, 서버 바인딩) ──
+let qrCountdownTimer = null;
+function fmtMMSS(ms){ const s=Math.max(0,Math.ceil(ms/1000)); const m=Math.floor(s/60), ss=s%60; return (m<10?'0':'')+m+':'+(ss<10?'0':'')+ss; }
+function qrTtlText(mmss){ return LANG==='en' ? ('🔒 One-time · expires in ' + mmss) : ('🔒 1회용 · ' + mmss + ' 후 만료'); }
+function stopQrCountdown(){ if(qrCountdownTimer){ clearInterval(qrCountdownTimer); qrCountdownTimer=null; } const el=document.getElementById('qrTtl'); if(el) el.style.display='none'; }
+function startQrCountdown(ttlMs){
+  stopQrCountdown();
+  const el=document.getElementById('qrTtl'); if(!el) return;
+  const deadline=Date.now()+(ttlMs||120000);
+  el.style.display='';
+  const tick=()=>{
+    const rem=deadline-Date.now();
+    el.textContent=qrTtlText(fmtMMSS(rem));
+    el.classList.toggle('ending', rem<=20000);
+    if(rem<=0){
+      stopQrCountdown();
+      if(currentSid) socket.emit('session-expired', { sid: currentSid });  // 스캔 후 확인 전 휴대폰에 안내
+      startSession();                                                      // 새 QR 재발급
+    }
+  };
+  tick();
+  qrCountdownTimer=setInterval(tick,1000);
 }
 
 // QR 표시 — 휴대폰도 PC와 같은 언어로 열리도록 주소에 lang을 실어 보낸다
@@ -364,6 +393,7 @@ function renderPadB(pi) {
 }
 
 socket.on('mobile-paired', () => {
+  stopQrCountdown();                       // 확인됨 → QR 카운트다운 종료
   log('logPaired', 'success');
   log('logChannel2', 'info');
   showStage2();
